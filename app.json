@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "SkillUp",
+    "slug": "skillup",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/icon.svg",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./public/apple-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.skillup.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/apple-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.skillup.mobile"
+    },
+    "web": {
+      "favicon": "./public/apple-icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "de7fc6b5-d22f-4d6f-9225-3c001b52aeef"
+      }
+    }
+  }
+}
