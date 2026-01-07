@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, FlatList, SafeAreaProvider, TouchableOpacity } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { mockScheduledMeetings } from "@/data/mockData"
 import { Ionicons } from "@expo/vector-icons"
 
 export default function ScheduleScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Schedule</Text>
         <Text style={styles.subtitle}>Manage your upcoming consultations</Text>
@@ -59,7 +59,7 @@ export default function ScheduleScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

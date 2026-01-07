@@ -1,96 +1,146 @@
-import { useEffect } from "react"
-import { View, Text, StyleSheet, Image, Animated, Dimensions } from "react-native"
+import { useEffect, useRef } from "react"
+import { View, Text, StyleSheet, Image, Animated } from "react-native"
+import { LinearGradient } from "expo-linear-gradient"
+import LottieView from "lottie-react-native"
 import { colors } from "@/theme/colors"
 import { typography } from "@/theme/typography"
-
-const { width } = Dimensions.get("window")
+import { useNavigation } from "@react-navigation/native"
+import { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { RootStackParamList } from "../../types/navigation"
 
 export default function SplashScreen() {
-  const fadeAnim = new Animated.Value(0)
-  const scaleAnim = new Animated.Value(0.8)
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+
+  const logoAnim = useRef(new Animated.Value(0)).current
+  const textAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
+    Animated.sequence([
+      Animated.timing(logoAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 900,
         useNativeDriver: true,
       }),
-      Animated.spring(scaleAnim, {
+      Animated.timing(textAnim, {
         toValue: 1,
-        friction: 4,
+        duration: 700,
         useNativeDriver: true,
       }),
     ]).start()
+
+    const timer = setTimeout(() => {
+      navigation.replace("Onboarding")
+    }, 3000)
+
+    return () => clearTimeout(timer)
   }, [])
 
   return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+    <LinearGradient
+      colors={[colors.primaryDark, colors.primary]}
+      style={styles.container}
+    >
+      {/* Illustration (supporting, not hero) */}
+      <LottieView
+        source={require("../../public/OnlineLearning.json")}
+        autoPlay
+        loop
+        style={styles.lottie}
+      />
+
+      {/* Brand */}
+      <Animated.View
+        style={[
+          styles.brand,
+          {
+            opacity: logoAnim,
+            transform: [
+              {
+                scale: logoAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.9, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.logoContainer}>
           <Image
-            source={{ uri: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=200" }}
+            source={require("../../public/skilluplogo.png")}
             style={styles.logo}
-            resizeMode="contain"
           />
         </View>
-        <Text style={styles.title}>SkillUp</Text>
-        <Text style={styles.tagline}>Learn. Grow. Consult.</Text>
+
+        <Animated.View
+          style={{
+            opacity: textAnim,
+            transform: [
+              {
+                translateY: textAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [8, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          <Text style={styles.title}>SkillUp</Text>
+          <Text style={styles.tagline}>Learn. Grow. Consult.</Text>
+        </Animated.View>
       </Animated.View>
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Loading your learning journey...</Text>
-      </View>
-    </View>
+    </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    alignItems: "center",
     justifyContent: "center",
+  },
+
+  lottie: {
+    width: 280,
+    height: 280,
+    marginBottom: 30,
+    opacity: 0.9,
+  },
+
+  brand: {
     alignItems: "center",
   },
-  content: {
-    alignItems: "center",
-  },
+
   logoContainer: {
-    width: 120,
-    height: 120,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 60,
-    justifyContent: "center",
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#fff",
     alignItems: "center",
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    justifyContent: "center",
+    marginBottom: 16,
   },
+
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    resizeMode: "contain",
+    borderRadius: 44,
   },
+
   title: {
-    fontSize: 40,
+    fontSize: 34,
     fontFamily: typography.fontFamily.bold,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 8,
+    color: "#fff",
+    textAlign: "center",
   },
+
   tagline: {
-    fontSize: 18,
+    fontSize: 15,
     fontFamily: typography.fontFamily.medium,
-    color: "rgba(255, 255, 255, 0.9)",
-  },
-  footer: {
-    position: "absolute",
-    bottom: 50,
-  },
-  footerText: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 6,
+    textAlign: "center",
   },
 })

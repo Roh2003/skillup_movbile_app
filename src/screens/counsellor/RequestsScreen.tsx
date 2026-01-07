@@ -1,5 +1,5 @@
 
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Alert } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaProvider, Alert } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { mockMeetingRequests } from "@/data/mockData"
 import { Ionicons } from "@expo/vector-icons"
@@ -22,7 +22,7 @@ export default function RequestsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.topBar}>
         <View>
           <Text style={styles.greeting}>Welcome Back,</Text>
@@ -86,7 +86,7 @@ export default function RequestsScreen() {
           </View>
         )}
       />
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

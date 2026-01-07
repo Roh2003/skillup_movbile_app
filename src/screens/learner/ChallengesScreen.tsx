@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 import { mockChallenges } from "@/data/mockData"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+
 
 export default function ChallengesScreen() {
   const navigation = useNavigation<any>()
@@ -11,7 +13,7 @@ export default function ChallengesScreen() {
   const codingChallenges = mockChallenges.filter((c) => c.type === "coding")
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Challenges</Text>
         <Text style={styles.subtitle}>Improve your skills with daily problems</Text>
@@ -70,7 +72,7 @@ export default function ChallengesScreen() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

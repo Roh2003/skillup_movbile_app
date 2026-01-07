@@ -1,12 +1,13 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 import { mockResources } from "@/data/mockData"
+import { SafeAreaProvider } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 
 export default function FreeResourcesScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Free Resources</Text>
         <Text style={styles.subtitle}>Unlock your potential with premium materials</Text>
@@ -44,7 +45,7 @@ export default function FreeResourcesScreen() {
           </TouchableOpacity>
         )}
       />
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

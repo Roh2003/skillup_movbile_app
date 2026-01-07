@@ -1,12 +1,23 @@
 export type RootStackParamList = {
   Splash: undefined
+  Onboarding: undefined
+  Welcome: undefined
   RoleSelection: undefined
   LearnerLogin: undefined
   LearnerRegister: undefined
+  ResetPassword: undefined
   CounsellorLogin: undefined
+  Profile: undefined
+  Notifications: undefined
+  Options: undefined
+  Bookmarks: undefined
+  Chat: undefined
+  Settings: undefined
+  EditProfile: undefined
+  VideoPlayer: { lessonId?: string; courseId?: string }
+  CourseDetail: { courseId: string }
   LearnerMain: undefined
   CounsellorMain: undefined
-  CourseDetail: { courseId: string }
   ConsultationRequest: { counsellorId: string }
 }
 

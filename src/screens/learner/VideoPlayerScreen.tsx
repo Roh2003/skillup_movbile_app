@@ -1,13 +1,15 @@
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, Text, StatusBar } from "react-native"
+import { View, StyleSheet, TouchableOpacity, Text, StatusBar } from "react-native"
 import { Video, ResizeMode } from "expo-av"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+
 
 export default function VideoPlayerScreen() {
   const navigation = useNavigation()
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <StatusBar hidden />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -29,7 +31,7 @@ export default function VideoPlayerScreen() {
       <View style={styles.footer}>
         <Text style={styles.infoText}>Auto-playing next lesson in 5s...</Text>
       </View>
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

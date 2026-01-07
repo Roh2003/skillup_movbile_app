@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import {
   View,
@@ -6,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,31 +12,36 @@ import {
   Alert,
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import { useAuth } from "../../../context/AuthContext"
-import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
-import { typography } from "@/theme/typography"
 import { Ionicons } from "@expo/vector-icons"
+import { useAuth } from "../../../context/AuthContext"
+import { typography } from "@/theme/typography"
+import { colors } from "@/theme/colors"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function LearnerRegisterScreen() {
   const navigation = useNavigation<any>()
   const { register } = useAuth()
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    mobile: "",
     password: "",
     confirmPassword: "",
-    skills: "",
-    interestedField: "",
-    careerGoal: "",
   })
+
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const updateForm = (key: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [key]: value }))
+  }
 
   const handleRegister = async () => {
     const { name, email, password, confirmPassword } = formData
 
     if (!name || !email || !password) {
-      Alert.alert("Error", "Please fill in all required fields")
+      Alert.alert("Error", "Please fill required fields")
       return
     }
 
@@ -51,52 +54,68 @@ export default function LearnerRegisterScreen() {
     try {
       await register({
         ...formData,
-        skills: formData.skills.split(",").map((s) => s.trim()),
+        mobile: "",
+        skills: "",
+        interestedField: "",
+        careerGoal: "",
+        skills: [],
       })
-    } catch (error) {
-      Alert.alert("Registration Failed", "Something went wrong")
+    } catch {
+      Alert.alert("Registration failed", "Try again later")
     } finally {
       setLoading(false)
     }
   }
 
-  const updateForm = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }))
-  }
-
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={colors.light.text} />
-          </TouchableOpacity>
-
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join SkillUp to start your learning journey.</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={colors.light.text} />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.form}>
-            {/* Basic Info */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Basic Information</Text>
+          {/* Illustration */}
+          <View style={styles.illustrationContainer}>
+            <View style={styles.illustration}>
+              <Ionicons name="person-add-outline" size={100} color={colors.primary} />
+            </View>
+          </View>
 
+          {/* Content */}
+          <View style={styles.content}>
+            <Text style={styles.title}>Sign Up</Text>
+            <Text style={styles.subtitle}>
+              Lorem ipsum dolor sit amet a aconsectetur
+            </Text>
+
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Full Name Input */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Full Name *</Text>
+                <Text style={styles.label}>Full Name</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter your name"
+                  placeholder="Your Name Here"
+                  placeholderTextColor={colors.light.textTertiary}
                   value={formData.name}
                   onChangeText={(v) => updateForm("name", v)}
                 />
               </View>
 
+              {/* Email Input */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email Address *</Text>
+                <Text style={styles.label}>Email Here</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="name@example.com"
+                  placeholder="Contact@gmail.com"
+                  placeholderTextColor={colors.light.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={formData.email}
@@ -104,97 +123,88 @@ export default function LearnerRegisterScreen() {
                 />
               </View>
 
+              {/* Password Input */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Mobile Number</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="+1 234 567 890"
-                  keyboardType="phone-pad"
-                  value={formData.mobile}
-                  onChangeText={(v) => updateForm("mobile", v)}
-                />
-              </View>
-            </View>
-
-            {/* Career Goals */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Learning Preferences</Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Skills (comma separated)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Python, Java, Design..."
-                  value={formData.skills}
-                  onChangeText={(v) => updateForm("skills", v)}
-                />
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="********"
+                    placeholderTextColor={colors.light.textTertiary}
+                    secureTextEntry={!showPassword}
+                    value={formData.password}
+                    onChangeText={(v) => updateForm("password", v)}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={colors.light.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
+              {/* Confirm Password Input */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Interested Field</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Data Science"
-                  value={formData.interestedField}
-                  onChangeText={(v) => updateForm("interestedField", v)}
-                />
+                <Text style={styles.label}>Confirm Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="********"
+                    placeholderTextColor={colors.light.textTertiary}
+                    secureTextEntry={!showConfirmPassword}
+                    value={formData.confirmPassword}
+                    onChangeText={(v) => updateForm("confirmPassword", v)}
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <Ionicons
+                      name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={colors.light.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>What do you want to become?</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. AI Engineer"
-                  value={formData.careerGoal}
-                  onChangeText={(v) => updateForm("careerGoal", v)}
-                />
-              </View>
-            </View>
-
-            {/* Security */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Security</Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Create a password"
-                  secureTextEntry
-                  value={formData.password}
-                  onChangeText={(v) => updateForm("password", v)}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Repeat your password"
-                  secureTextEntry
-                  value={formData.confirmPassword}
-                  onChangeText={(v) => updateForm("confirmPassword", v)}
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.registerButton, loading && styles.disabledButton]}
-              onPress={handleRegister}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.registerButtonText}>Register</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("LearnerLogin")}>
-                <Text style={styles.footerLink}>Login</Text>
+              {/* Sign Up Button */}
+              <TouchableOpacity
+                style={[styles.signUpButton, loading && { opacity: 0.7 }]}
+                onPress={handleRegister}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.signUpButtonText}>SIGN UP</Text>
+                )}
               </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Or Sign Up With</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Social Signup */}
+              <TouchableOpacity style={styles.socialButton}>
+                <Ionicons name="logo-facebook" size={20} color="#1877F2" />
+                <Text style={styles.socialButtonText}>Sign Up with Facebook</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.socialButton}>
+                <Ionicons name="logo-google" size={20} color="#4285F4" />
+                <Text style={styles.socialButtonText}>Sign Up with Google</Text>
+              </TouchableOpacity>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Already Have An Account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate("LearnerLogin")}>
+                  <Text style={styles.footerLink}>Sign In Here</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -206,99 +216,149 @@ export default function LearnerRegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.light.background,
+    backgroundColor: "#FFFFFF",
   },
   scrollContent: {
-    padding: spacing.lg,
+    flexGrow: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.light.surface,
+    justifyContent: "center",
+  },
+  illustrationContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  illustration: {
+    width: 200,
+    height: 200,
+    backgroundColor: colors.green[50],
+    borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xl,
   },
-  header: {
-    marginBottom: spacing.xl,
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
-    color: colors.light.text,
     fontFamily: typography.fontFamily.bold,
+    color: colors.light.text,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: colors.light.textSecondary,
-    marginTop: spacing.sm,
+    fontSize: 14,
     fontFamily: typography.fontFamily.regular,
+    color: colors.light.textSecondary,
+    marginBottom: 32,
   },
   form: {
-    gap: spacing.xl,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.primary,
-    fontFamily: typography.fontFamily.bold,
-    marginBottom: spacing.xs,
+    width: "100%",
   },
   inputContainer: {
-    gap: spacing.sm,
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: colors.light.text,
     fontFamily: typography.fontFamily.medium,
+    color: colors.light.text,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: colors.light.surface,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    height: 52,
-    color: colors.light.text,
+    backgroundColor: colors.light.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 16,
     fontFamily: typography.fontFamily.regular,
+    color: colors.light.text,
+    borderWidth: 1,
+    borderColor: colors.green[200],
   },
-  registerButton: {
-    backgroundColor: colors.primary,
-    height: 56,
-    borderRadius: borderRadius.md,
-    justifyContent: "center",
+  passwordContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.md,
-    ...shadows.md,
+    backgroundColor: colors.light.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.green[200],
   },
-  disabledButton: {
-    opacity: 0.7,
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.light.text,
   },
-  registerButtonText: {
+  signUpButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  signUpButtonText: {
     color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
     fontFamily: typography.fontFamily.bold,
+    letterSpacing: 0.5,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.light.border,
+  },
+  dividerText: {
+    paddingHorizontal: 16,
+    fontSize: 14,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.light.textSecondary,
+  },
+  socialButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  socialButtonText: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.light.text,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: spacing.md,
-    marginBottom: spacing.xl,
+    alignItems: "center",
+    marginTop: 24,
+    marginBottom: 40,
   },
   footerText: {
-    color: colors.light.textSecondary,
     fontSize: 14,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.light.textSecondary,
   },
   footerLink: {
-    color: colors.primary,
-    fontWeight: "bold",
     fontSize: 14,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.primary,
   },
 })

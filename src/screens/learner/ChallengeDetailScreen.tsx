@@ -1,10 +1,12 @@
 
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
 import { colors, spacing, borderRadius } from "@/theme/colors"
 import { mockChallenges } from "@/data/mockData"
 import { useRoute, useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+
 
 export default function ChallengeDetailScreen() {
   const route = useRoute<any>()
@@ -38,7 +40,7 @@ export default function ChallengeDetailScreen() {
 
   if (isFinished) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaProvider style={styles.container}>
         <View style={styles.resultContainer}>
           <Ionicons name="trophy" size={80} color={colors.accent} />
           <Text style={styles.resultTitle}>Challenge Completed!</Text>
@@ -49,12 +51,12 @@ export default function ChallengeDetailScreen() {
             <Text style={styles.doneButtonText}>Finish</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </SafeAreaProvider>
     )
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.progressContainer}>
         <View
           style={[
@@ -97,7 +99,7 @@ export default function ChallengeDetailScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

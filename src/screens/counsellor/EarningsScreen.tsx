@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Dimensions } from "react-native"
+import { View, Text, StyleSheet, ScrollView, SafeAreaProvider, TouchableOpacity, Dimensions } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { Ionicons } from "@expo/vector-icons"
 import { mockCompletedMeetings } from "@/data/mockData"
@@ -9,7 +9,7 @@ export default function EarningsScreen() {
   const totalEarnings = mockCompletedMeetings.reduce((sum, m) => sum + (m.earnings || 0), 0)
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>Earnings Dashboard</Text>
@@ -78,7 +78,7 @@ export default function EarningsScreen() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

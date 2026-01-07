@@ -13,30 +13,49 @@ import {
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
-import { useAuth } from "../../../context/AuthContext"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
 
-export default function CounsellorLoginScreen() {
+export default function ResetPasswordScreen() {
   const navigation = useNavigation<any>()
-  const { login } = useAuth()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
+  })
+
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter your professional credentials")
+  const handleSubmit = async () => {
+    const { password, confirmPassword } = formData
+
+    if (!password || !confirmPassword) {
+      Alert.alert("Error", "Please fill all fields")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match")
+      return
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters")
       return
     }
 
     setLoading(true)
     try {
-      await login(email, password, "counsellor")
-    } catch (error) {
-      Alert.alert("Login Failed", "Invalid credentials or account not approved")
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      Alert.alert("Success", "Password reset successfully", [
+        { text: "OK", onPress: () => navigation.navigate("LearnerLogin") },
+      ])
+    } catch {
+      Alert.alert("Error", "Failed to reset password")
     } finally {
       setLoading(false)
     }
@@ -59,47 +78,30 @@ export default function CounsellorLoginScreen() {
           {/* Illustration */}
           <View style={styles.illustrationContainer}>
             <View style={styles.illustration}>
-              <Ionicons name="people-outline" size={100} color="#F59E0B" />
+              <Ionicons name="lock-closed-outline" size={100} color={colors.primary} />
             </View>
           </View>
 
           {/* Content */}
           <View style={styles.content}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Professional Portal</Text>
-            </View>
-            <Text style={styles.title}>Counsellor Login</Text>
+            <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
-              Welcome, professional! Access your dashboard to manage learner requests.
+              Lorem ipsum dolor sit amet a aconsectetur
             </Text>
 
             {/* Form */}
             <View style={styles.form}>
-              {/* Email Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Professional Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="name@professional.com"
-                  placeholderTextColor={colors.light.textTertiary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={email}
-                  onChangeText={setEmail}
-                />
-              </View>
-
               {/* Password Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
                     style={styles.passwordInput}
-                    placeholder="Enter password"
+                    placeholder="********"
                     placeholderTextColor={colors.light.textTertiary}
                     secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={setPassword}
+                    value={formData.password}
+                    onChangeText={(v) => setFormData({ ...formData, password: v })}
                   />
                   <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                     <Ionicons
@@ -111,26 +113,40 @@ export default function CounsellorLoginScreen() {
                 </View>
               </View>
 
-              {/* Login Button */}
+              {/* Confirm Password Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="********"
+                    placeholderTextColor={colors.light.textTertiary}
+                    secureTextEntry={!showConfirmPassword}
+                    value={formData.confirmPassword}
+                    onChangeText={(v) => setFormData({ ...formData, confirmPassword: v })}
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <Ionicons
+                      name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={colors.light.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Submit Button */}
               <TouchableOpacity
-                style={[styles.loginButton, loading && { opacity: 0.7 }]}
-                onPress={handleLogin}
+                style={[styles.submitButton, loading && { opacity: 0.7 }]}
+                onPress={handleSubmit}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.loginButtonText}>SIGN IN</Text>
+                  <Text style={styles.submitButtonText}>SUBMIT</Text>
                 )}
               </TouchableOpacity>
-
-              {/* Info Box */}
-              <View style={styles.infoBox}>
-                <Ionicons name="information-circle-outline" size={20} color={colors.light.textTertiary} />
-                <Text style={styles.infoText}>
-                  Counsellor accounts are created and managed by the Skillify Admin panel.
-                </Text>
-              </View>
             </View>
           </View>
         </ScrollView>
@@ -163,7 +179,7 @@ const styles = StyleSheet.create({
   illustration: {
     width: 200,
     height: 200,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: colors.green[50],
     borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
@@ -171,20 +187,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-  },
-  badge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  badgeText: {
-    color: "#F59E0B",
-    fontSize: 12,
-    fontFamily: typography.fontFamily.bold,
-    letterSpacing: 0.5,
   },
   title: {
     fontSize: 28,
@@ -197,7 +199,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     color: colors.light.textSecondary,
     marginBottom: 32,
-    lineHeight: 20,
   },
   form: {
     width: "100%",
@@ -210,17 +211,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium,
     color: colors.light.text,
     marginBottom: 8,
-  },
-  input: {
-    backgroundColor: colors.light.inputBg,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    fontFamily: typography.fontFamily.regular,
-    color: colors.light.text,
-    borderWidth: 1,
-    borderColor: colors.green[200],
   },
   passwordContainer: {
     flexDirection: "row",
@@ -238,34 +228,19 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     color: colors.light.text,
   },
-  loginButton: {
-    backgroundColor: "#F59E0B",
+  submitButton: {
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 40,
   },
-  loginButtonText: {
+  submitButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontFamily: typography.fontFamily.bold,
     letterSpacing: 0.5,
   },
-  infoBox: {
-    flexDirection: "row",
-    backgroundColor: colors.light.surface,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 40,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    fontFamily: typography.fontFamily.regular,
-    color: colors.light.textSecondary,
-    lineHeight: 18,
-  },
 })
+

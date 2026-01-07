@@ -1,15 +1,17 @@
-import { View, Text, StyleSheet, FlatList, SafeAreaView, Image, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 import { mockCourses } from "@/data/mockData"
 import { useNavigation } from "@react-navigation/native"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+
 
 export default function MyLearningScreen() {
   const navigation = useNavigation<any>()
   const enrolledCourses = mockCourses.filter((c) => c.enrolled)
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Learning</Text>
         <Text style={styles.headerSubtitle}>Continue where you left off</Text>
@@ -54,7 +56,7 @@ export default function MyLearningScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 

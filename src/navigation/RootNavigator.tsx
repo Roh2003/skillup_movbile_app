@@ -2,20 +2,39 @@ import React from "react"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { Ionicons } from "@expo/vector-icons"
+import { colors } from "@/theme/colors"
 import type { RootStackParamList, LearnerTabParamList, CounsellorTabParamList } from "../../types/navigation"
 
-// Screens
+// Auth / onboarding
 import SplashScreen from "@/screens/SplashScreen"
+import OnboardingScreen from "@/screens/OnboardingScreen"
+import WelcomeScreen from "@/screens/WelcomeScreen"
 import RoleSelectionScreen from "@/screens/RoleSelectionScreen"
 import LearnerLoginScreen from "@/screens/learner/LearnerLoginScreen"
 import LearnerRegisterScreen from "@/screens/learner/LearnerRegisterScreen"
+import ResetPasswordScreen from "@/screens/ResetPasswordScreen"
 import CounsellorLoginScreen from "@/screens/counsellor/CounsellorLoginScreen"
+
+// Learner main
 import HomeScreen from "@/screens/learner/HomeScreen"
 import MyLearningScreen from "@/screens/learner/MyLearningScreen"
 import CoursesScreen from "@/screens/learner/CoursesScreen"
 import ChallengesScreen from "@/screens/learner/ChallengesScreen"
 import FreeResourcesScreen from "@/screens/learner/FreeResourcesScreen"
 import ConsultationScreen from "@/screens/learner/ConsultationScreen"
+
+// Extra learner stack screens
+import CourseDetailScreen from "@/screens/learner/CourseDetailScreen"
+import VideoPlayerScreen from "@/screens/learner/VideoPlayerScreen"
+import ProfileScreen from "@/screens/learner/ProfileScreen"
+import NotificationsScreen from "@/screens/learner/NotificationsScreen"
+import BookmarksScreen from "@/screens/learner/BookmarksScreen"
+import ChatScreen from "@/screens/learner/ChatScreen"
+import SettingsScreen from "@/screens/learner/SettingsScreen"
+import OptionsScreen from "@/screens/learner/OptionsScreen"
+import EditProfileScreen from "@/screens/learner/EditProfileScreen"
+
+// Counsellor
 import RequestsScreen from "@/screens/counsellor/RequestsScreen"
 import ScheduleScreen from "@/screens/counsellor/ScheduleScreen"
 import EarningsScreen from "@/screens/counsellor/EarningsScreen"
@@ -30,7 +49,7 @@ function LearnerTabNavigator() {
     <LearnerTabs.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#6366f1",
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: "#9ca3af",
       }}
     >
@@ -87,7 +106,7 @@ function CounsellorTabNavigator() {
     <CounsellorTabs.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#6366f1",
+        tabBarActiveTintColor: "#F59E0B",
         tabBarInactiveTintColor: "#9ca3af",
       }}
     >
@@ -131,14 +150,26 @@ export default function RootNavigator() {
         headerShown: false,
       }}
     >
-      {/* <RootStack.Screen name="Splash" component={SplashScreen} /> */}
+      <RootStack.Screen name="Splash" component={SplashScreen} />
+      <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
+      <RootStack.Screen name="Welcome" component={WelcomeScreen} />
       <RootStack.Screen name="RoleSelection" component={RoleSelectionScreen} />
       <RootStack.Screen name="LearnerLogin" component={LearnerLoginScreen} />
       <RootStack.Screen name="LearnerRegister" component={LearnerRegisterScreen} />
+      <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <RootStack.Screen name="CounsellorLogin" component={CounsellorLoginScreen} />
       <RootStack.Screen name="LearnerMain" component={LearnerTabNavigator} />
       <RootStack.Screen name="CounsellorMain" component={CounsellorTabNavigator} />
+      {/* Extra learner stack screens */}
+      <RootStack.Screen name="CourseDetail" component={CourseDetailScreen} />
+      <RootStack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
+      <RootStack.Screen name="Profile" component={ProfileScreen} />
+      <RootStack.Screen name="Notifications" component={NotificationsScreen} />
+      <RootStack.Screen name="Options" component={OptionsScreen} />
+      <RootStack.Screen name="Bookmarks" component={BookmarksScreen} />
+      <RootStack.Screen name="Chat" component={ChatScreen} />
+      <RootStack.Screen name="Settings" component={SettingsScreen} />
+      <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
     </RootStack.Navigator>
   )
 }
-

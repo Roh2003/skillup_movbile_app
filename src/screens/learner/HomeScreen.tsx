@@ -1,145 +1,142 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Image, FlatList } from "react-native"
-import { useAuth } from "../../../context/AuthContext"
-import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
-import { typography } from "@/theme/typography"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, FlatList, TextInput } from "react-native"
+import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
-import { mockCourses, mockCounsellors } from "@/data/mockData"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
+import { useAuth } from "../../../context/AuthContext"
+import { mockCourses, mockCounsellors } from "@/data/mockData"
+import { colors } from "@/theme/colors"
+import { typography } from "@/theme/typography"
 
 export default function HomeScreen() {
   const { user } = useAuth()
   const navigation = useNavigation<any>()
+  const insets = useSafeAreaInsets()
 
-  const ongoingCourses = mockCourses.filter((c) => c.enrolled)
-  const featuredCourses = mockCourses.filter((c) => !c.enrolled)
+  const continueWatching = mockCourses.filter((c) => c.enrolled)
+  const recommended = mockCourses
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.greeting}>Hello,</Text>
-          <Text style={styles.userName}>{user?.name || "Learner"}</Text>
-        </View>
-        <View style={styles.topBarActions}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Profile")}>
-            <Ionicons name="person-circle-outline" size={28} color={colors.light.text} />
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Top bar */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.profileCircle} onPress={() => navigation.navigate("Profile")}>
+            <Image
+              source={{ uri: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=80" }}
+              style={styles.profileImage}
+            />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Settings")}>
-            <Ionicons name="settings-outline" size={26} color={colors.light.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Ongoing Courses */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Ongoing Courses</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("MyLearning")}>
-              <Text style={styles.seeAll}>See All</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.welcome}>Welcome..,</Text>
+            <Text style={styles.tagline}>{user?.name || "Rohit Saundalkar"}</Text>
+          </View>
+          <View style={styles.topActions}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Notifications")}>
+              <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Settings")}>
+              <Ionicons name="settings-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Options")}>
+              <Ionicons name="menu-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={ongoingCourses}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.ongoingCard}
-                onPress={() =>
-                  navigation.navigate("MyLearning", { screen: "CourseDetail", params: { courseId: item.id } })
-                }
-              >
-                <Image source={{ uri: item.thumbnail }} style={styles.ongoingThumbnail} />
-                <View style={styles.ongoingInfo}>
-                  <Text style={styles.courseTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <View style={styles.progressWrapper}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { width: typeof item.progress === 'number' ? `${item.progress}%` : 0 }
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.progressText}>
-                    {item.progress}% Completed
-                  </Text>
+        </View>
+
+        {/* Search */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color={colors.light.textTertiary} />
+          <TextInput placeholder="Search courses, mentors, topics" style={styles.searchInput} placeholderTextColor={colors.light.textTertiary} />
+          <Ionicons name="options-outline" size={20} color={colors.light.textTertiary} />
+        </View>
+
+        {/* Continue Watching */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Continue Watching</Text>
+          <TouchableOpacity><Text style={styles.link}>See all</Text></TouchableOpacity>
+        </View>
+        <FlatList
+          data={continueWatching}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.continueCard} onPress={() => navigation.navigate("CourseDetail", { courseId: item.id })}>
+              <Image source={{ uri: item.thumbnail }} style={styles.continueImage} />
+              <View style={styles.continueInfo}>
+                <Text style={styles.continueTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.metaText}>{item.level} • {item.duration}</Text>
+                <View style={styles.progressBg}>
+                  <View style={[styles.progressFill, { width: `${item.progress ?? 0}%` }]} />
                 </View>
-              </TouchableOpacity>
-            )}
-          />
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+
+        {/* Categories */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <TouchableOpacity><Text style={styles.link}>See all</Text></TouchableOpacity>
+        </View>
+        <View style={styles.chipRow}>
+          {["UI/UX Design", "Web Design", "App Design", "E-commerce", "Technical"].map((cat) => (
+            <TouchableOpacity key={cat} style={styles.chip}>
+              <Text style={styles.chipText}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Featured Courses */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Courses</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Courses")}>
-              <Text style={styles.seeAll}>Explore</Text>
-            </TouchableOpacity>
-          </View>
-          {featuredCourses.slice(0, 2).map((course) => (
+        {/* Recommended */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recommended</Text>
+        </View>
+        <View style={styles.recommendedGrid}>
+          {recommended.map((course) => (
             <TouchableOpacity
               key={course.id}
-              style={styles.featuredCard}
-              onPress={() =>
-                navigation.navigate("Courses", { screen: "CourseDetail", params: { courseId: course.id } })
-              }
+              style={styles.recommendCard}
+              onPress={() => navigation.navigate("CourseDetail", { courseId: course.id })}
             >
-              <Image source={{ uri: course.thumbnail }} style={styles.featuredThumbnail} />
-              <View style={styles.featuredInfo}>
-                <Text style={styles.featuredCategory}>{course.category}</Text>
-                <Text style={styles.featuredTitle}>{course.title}</Text>
-                <View style={styles.featuredMeta}>
-                  <Ionicons name="time-outline" size={14} color={colors.light.textSecondary} />
-                  <Text style={styles.metaText}>{course.duration}</Text>
-                  <Text style={styles.metaDivider}>•</Text>
-                  <Text style={styles.metaText}>{course.level}</Text>
-                </View>
+              <Image source={{ uri: course.thumbnail }} style={styles.recommendImage} />
+              <View style={styles.recommendInfo}>
+                <Text style={styles.recommendTitle} numberOfLines={1}>{course.title}</Text>
+                <Text style={styles.metaText}>{course.duration} • {course.level}</Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Top Counsellors */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Counsellors</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Consultation")}>
-              <Text style={styles.seeAll}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={mockCounsellors}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.counsellorCard}
-                onPress={() =>
-                  navigation.navigate("Consultation", { screen: "CounsellorDetail", params: { counsellorId: item.id } })
-                }
-              >
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={30} color={colors.primary} />
-                  {item.isActive && <View style={styles.activeDot} />}
-                </View>
-                <Text style={styles.counsellorName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.counsellorSpec} numberOfLines={1}>
-                  {item.specialization}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Top Counsellors</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Consultation")}><Text style={styles.link}>View all</Text></TouchableOpacity>
         </View>
+        <FlatList
+          data={mockCounsellors}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.counsellorCard}>
+              <View style={styles.avatar}>
+                <Ionicons name="person" size={22} color={colors.primary} />
+                {item.isActive && <View style={styles.activeDot} />}
+              </View>
+              <Text style={styles.counsellorName} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.counsellorSpec} numberOfLines={1}>{item.specialization}</Text>
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={12} color="#FBBF24" />
+                <Text style={styles.ratingText}>{item.rating?.toFixed(1) ?? "4.8"}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }
 
@@ -150,175 +147,205 @@ const styles = StyleSheet.create({
   },
   topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.light.background,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 9,
+    marginHorizontal: 10,
+    backgroundColor: colors.green[300],
+    marginBottom: 10,
+    borderRadius: 50,
+
   },
-  topBarActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
+  profileCircle: {
+    width: 55,
+    height: 55,
+    borderRadius: 30,
+    overflow: "hidden",
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.green[200],
   },
-  greeting: {
-    fontSize: 14,
+  profileImage: { width: "100%", height: "100%" },
+  welcome: {
+    fontSize: 13,
     color: colors.light.textSecondary,
-    fontFamily: typography.fontFamily.regular,
   },
-  userName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.light.text,
+  tagline: {
+    fontSize: 18,
     fontFamily: typography.fontFamily.bold,
+    color: colors.light.text,
+  },
+  topActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginLeft: 12,
   },
   iconButton: {
-    padding: spacing.xs,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: colors.light.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.light.border,
   },
-  scrollContent: {
-    paddingBottom: spacing.xl,
+  searchBar: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.light.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    paddingHorizontal: 14,
+    height: 48,
+    gap: 10,
   },
-  section: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
+  searchInput: { flex: 1, fontSize: 14, color: colors.light.text },
   sectionHeader: {
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginTop: 8,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: colors.light.text,
     fontFamily: typography.fontFamily.bold,
+    color: colors.light.text,
   },
-  seeAll: {
-    fontSize: 14,
+  link: {
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: typography.fontFamily.bold,
+    fontSize: 13,
   },
-  ongoingCard: {
-    width: 200,
+  continueCard: {
+    width: 240,
+    marginRight: 12,
+    borderRadius: 16,
     backgroundColor: colors.light.surface,
-    borderRadius: borderRadius.lg,
-    marginRight: spacing.md,
-    ...shadows.sm,
     borderWidth: 1,
     borderColor: colors.light.border,
     overflow: "hidden",
   },
-  ongoingThumbnail: {
-    width: "100%",
-    height: 100,
-  },
-  ongoingInfo: {
-    padding: spacing.sm,
-  },
-  courseTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+  continueImage: { width: "100%", height: 120 },
+  continueInfo: { padding: 12, gap: 6 },
+  continueTitle: {
+    fontSize: 15,
+    fontFamily: typography.fontFamily.bold,
     color: colors.light.text,
-    marginBottom: spacing.xs,
-  },
-  progressWrapper: {
-    height: 6,
-    backgroundColor: colors.light.surface,
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: colors.success,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 12,
-    color: colors.light.textSecondary,
-  },
-  featuredCard: {
-    flexDirection: "row",
-    backgroundColor: colors.light.surface,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    ...shadows.sm,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    overflow: "hidden",
-  },
-  featuredThumbnail: {
-    width: 100,
-    height: 100,
-  },
-  featuredInfo: {
-    flex: 1,
-    padding: spacing.sm,
-    justifyContent: "center",
-  },
-  featuredCategory: {
-    fontSize: 12,
-    color: colors.primary,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-  featuredTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.light.text,
-    marginBottom: 4,
-  },
-  featuredMeta: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   metaText: {
     fontSize: 12,
     color: colors.light.textSecondary,
-    marginLeft: 4,
   },
-  metaDivider: {
-    marginHorizontal: 4,
-    color: colors.light.textTertiary,
+  progressBg: {
+    height: 6,
+    backgroundColor: colors.light.border,
+    borderRadius: 4,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  chip: {
+    backgroundColor: colors.green[50],
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.green[200],
+  },
+  chipText: {
+    fontSize: 13,
+    color: colors.light.text,
+    fontFamily: typography.fontFamily.medium,
+  },
+  recommendedGrid: {
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  recommendCard: {
+    width: "48%",
+    backgroundColor: colors.light.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    overflow: "hidden",
+  },
+  recommendImage: { width: "100%", height: 100 },
+  recommendInfo: { padding: 10, gap: 4 },
+  recommendTitle: {
+    fontSize: 14,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.light.text,
   },
   counsellorCard: {
-    width: 120,
-    alignItems: "center",
-    marginRight: spacing.md,
-    padding: spacing.sm,
+    width: 140,
+    marginRight: 12,
     backgroundColor: colors.light.surface,
-    borderRadius: borderRadius.md,
-    ...shadows.sm,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+    padding: 12,
+    alignItems: "center",
   },
-  avatarPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#E0E7FF",
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.green[50],
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 8,
     position: "relative",
   },
   activeDot: {
     position: "absolute",
     bottom: 2,
     right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: colors.success,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: "#fff",
   },
   counsellorName: {
-    fontSize: 12,
-    fontWeight: "bold",
-    textAlign: "center",
+    fontSize: 13,
+    fontFamily: typography.fontFamily.bold,
     color: colors.light.text,
+    textAlign: "center",
   },
   counsellorSpec: {
-    fontSize: 10,
+    fontSize: 12,
     color: colors.light.textSecondary,
     textAlign: "center",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: colors.light.text,
   },
 })

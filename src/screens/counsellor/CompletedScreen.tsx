@@ -1,15 +1,15 @@
-import { View, Text, StyleSheet, SafeAreaView } from "react-native"
+import { View, Text, StyleSheet, SafeAreaProvider } from "react-native"
 import { colors, spacing } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 
 export default function CompletedScreen() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaProvider style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Completed Consultations</Text>
         <Text style={styles.subtitle}>No completed consultations yet</Text>
       </View>
-    </SafeAreaView>
+    </SafeAreaProvider>
   )
 }
 
