@@ -16,6 +16,11 @@ export type RootStackParamList = {
   EditProfile: undefined
   VideoPlayer: { lessonId?: string; courseId?: string }
   CourseDetail: { courseId: string }
+  ChallengeDetail: { challengeId: string }
+  Leaderboard: undefined
+  MeetingRequest: { counsellorId: string }
+  MeetingRoom: { meetingId: string }
+  CounsellorMeetingRoom: { meetingId: string }
   LearnerMain: undefined
   CounsellorMain: undefined
   ConsultationRequest: { counsellorId: string }

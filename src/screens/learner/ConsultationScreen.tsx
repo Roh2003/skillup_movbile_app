@@ -1,23 +1,157 @@
 
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, Image } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { typography } from "@/theme/typography"
-import { mockCounsellors } from "@/data/mockData"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SafeAreaProvider } from "react-native-safe-area-context"
-
+import counselorService from "@/services/counselor.service"
+import Toast from "react-native-toast-message"
 
 export default function ConsultationScreen() {
   const navigation = useNavigation<any>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [counselors, setCounselors] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const filteredCounsellors = mockCounsellors.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.specialization.toLowerCase().includes(searchQuery.toLowerCase()),
+  useEffect(() => {
+    fetchCounselors()
+  }, [])
+
+  const fetchCounselors = async () => {
+    try {
+      setLoading(true)
+      const response = await counselorService.getAllCounselors()
+      
+
+      setCounselors(response.data)
+
+    } catch (error: any) {
+      console.error('Fetch counselors error:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.response?.data?.message || 'Failed to fetch counselors'
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchCounselors()
+  }
+
+  const filteredCounselors = counselors.filter((c: any) =>
+    c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.specialization?.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleVideoCall = (counselor: any) => {
+    if (!counselor.isActive) {
+      Toast.show({
+        type: 'info',
+        text1: 'Counselor Offline',
+        text2: 'This counselor is currently not available'
+      })
+      return
+    }
+    
+    // Navigate to meeting request screen
+    navigation.navigate("MeetingRequest", { 
+      counselor,
+      meetingType: 'INSTANT'
+    })
+  }
+
+  const handleSchedule = (counselor: any) => {
+    // Navigate to meeting request screen with scheduled type
+    navigation.navigate("MeetingRequest", { 
+      counselor,
+      meetingType: 'SCHEDULED'
+    })
+  }
+
+  const renderCounselorCard = ({ item }: any) => (
+    <TouchableOpacity
+      style={styles.counsellorCard}
+      activeOpacity={0.9}
+    >
+      <View style={styles.avatarContainer}>
+        {item.profileImage ? (
+          <Image 
+            source={{ uri: item.profileImage }} 
+            style={styles.avatar}
+          />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons name="person" size={32} color={colors.primary} />
+          </View>
+        )}
+        <View
+          style={[
+            styles.statusDot,
+            { backgroundColor: item.isActive ? colors.success : colors.light.textTertiary },
+          ]}
+        />
+      </View>
+
+      <View style={styles.info}>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{item.name}</Text>
+          {item.rating && (
+            <View style={styles.ratingBadge}>
+              <Ionicons name="star" size={14} color={colors.accent} />
+              <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.specialization}>{item.specialization}</Text>
+        {item.experience && (
+          <Text style={styles.experience}>{item.experience} years experience</Text>
+        )}
+
+        <View style={styles.actions}>
+          <TouchableOpacity 
+            style={[styles.actionBtn, !item.isActive && styles.actionBtnDisabled]}
+            onPress={() => handleVideoCall(item)}
+            disabled={!item.isActive}
+          >
+            <Ionicons 
+              name="videocam" 
+              size={18} 
+              color={item.isActive ? colors.primary : colors.light.textTertiary} 
+            />
+            <Text style={[styles.actionText, !item.isActive && styles.actionTextDisabled]}>
+              {item.isActive ? 'Video Call' : 'Offline'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionBtn}
+            onPress={() => handleSchedule(item)}
+          >
+            <Ionicons name="calendar" size={18} color={colors.primary} />
+            <Text style={styles.actionText}>Schedule</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaProvider style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading counselors...</Text>
+        </View>
+      </SafeAreaProvider>
+    )
+  }
 
   return (
     <SafeAreaProvider style={styles.container}>
@@ -32,56 +166,32 @@ export default function ConsultationScreen() {
             placeholder="Search counsellors or specialties..."
             value={searchQuery}
             onChangeText={setSearchQuery}
+            placeholderTextColor={colors.light.textTertiary}
           />
         </View>
       </View>
 
       <FlatList
-        data={filteredCounsellors}
-        keyExtractor={(item) => item.id}
+        data={filteredCounselors}
+        keyExtractor={(item: any) => item.id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.counsellorCard}
-            onPress={() => navigation.navigate("CounsellorDetail", { counsellorId: item.id })}
-          >
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={32} color={colors.primary} />
-                <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: item.isActive ? colors.success : colors.light.textTertiary },
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.info}>
-              <View style={styles.nameRow}>
-                <Text style={styles.name}>{item.name}</Text>
-                <View style={styles.ratingBadge}>
-                  <Ionicons name="star" size={14} color={colors.accent} />
-                  <Text style={styles.ratingText}>{item.rating}</Text>
-                </View>
-              </View>
-              <Text style={styles.specialization}>{item.specialization}</Text>
-              {/* <Text style={styles.experience}>{item.experience} Experience</Text> */}
-
-              <View style={styles.actions}>
-                <TouchableOpacity style={styles.actionBtn}>
-                  <Ionicons name="videocam" size={18} color={colors.primary} />
-                  <Text style={styles.actionText}>Video Call</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}>
-                  <Ionicons name="calendar" size={18} color={colors.primary} />
-                  <Text style={styles.actionText}>Schedule</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
+        renderItem={renderCounselorCard}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="people-outline" size={64} color={colors.light.textTertiary} />
+            <Text style={styles.emptyText}>No counselors found</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your search</Text>
+          </View>
+        }
       />
+      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -91,11 +201,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    color: colors.light.textSecondary,
+  },
   header: {
     padding: spacing.lg,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     color: colors.light.text,
     fontFamily: typography.fontFamily.bold,
@@ -114,6 +234,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.light.border,
+    ...shadows.sm,
   },
   searchInput: {
     flex: 1,
@@ -131,12 +252,18 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
-    ...shadows.sm,
+    ...shadows.md,
     borderWidth: 1,
     borderColor: colors.light.border,
   },
   avatarContainer: {
     marginRight: spacing.md,
+    position: 'relative',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   avatarPlaceholder: {
     width: 64,
@@ -145,7 +272,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E7FF",
     justifyContent: "center",
     alignItems: "center",
-    position: "relative",
   },
   statusDot: {
     position: "absolute",
@@ -204,14 +330,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: borderRadius.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: borderRadius.md,
     backgroundColor: "#F5F3FF",
+    borderWidth: 1,
+    borderColor: `${colors.primary}30`,
+  },
+  actionBtnDisabled: {
+    backgroundColor: colors.light.surface,
+    borderColor: colors.light.border,
   },
   actionText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "bold",
     color: colors.primary,
+  },
+  actionTextDisabled: {
+    color: colors.light.textTertiary,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl * 2,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.light.text,
+    marginTop: spacing.md,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    marginTop: spacing.xs,
   },
 })

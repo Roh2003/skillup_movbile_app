@@ -17,10 +17,9 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.profileCard}>
-        <Image
-          source={{ uri: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200" }}
-          style={styles.avatar}
-        />
+        <View style={styles.avatarContainer}>
+          <Ionicons name="person-circle" size={90} color={colors.primary} />
+        </View>
         <Text style={styles.name}>{user?.name || "Learner"}</Text>
         <Text style={styles.email}>{user?.email || "name123@gmail.com"}</Text>
 
@@ -79,6 +78,9 @@ const styles = StyleSheet.create({
   profileCard: {
     alignItems: "center",
     paddingVertical: 24,
+  },
+  avatarContainer: {
+    marginBottom: 12,
   },
   avatar: {
     width: 90,

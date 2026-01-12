@@ -1,23 +1,211 @@
-
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaProvider, Alert } from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaProvider, Alert, ActivityIndicator, RefreshControl } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
-import { mockMeetingRequests } from "@/data/mockData"
 import { Ionicons } from "@expo/vector-icons"
 import { useAuth } from "../../../context/AuthContext"
 import { useNavigation } from "@react-navigation/native"
+import consultationService from "@/services/consultation.service"
+import Toast from "react-native-toast-message"
 
 export default function RequestsScreen() {
   const { user } = useAuth()
   const navigation = useNavigation<any>()
 
-  const handleAction = (type: "accept" | "reject", name: string) => {
+  const [requests, setRequests] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  useEffect(() => {
+    fetchRequests()
+  }, [])
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true)
+      const response = await consultationService.getCounselorRequests()
+
+      if (response.success) {
+        setRequests(response.data)
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.message || 'Failed to fetch requests'
+        })
+      }
+    } catch (error: any) {
+      console.error('Fetch requests error:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.response?.data?.message || 'Failed to fetch requests'
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchRequests()
+  }
+
+  const handleAccept = async (requestId: number, learnerName: string) => {
     Alert.alert(
-      type === "accept" ? "Accept Request" : "Reject Request",
-      `Are you sure you want to ${type} the request from ${name}?`,
+      "Accept Request",
+      `Accept meeting request from ${learnerName}?`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: type.toUpperCase(), onPress: () => {} },
+        {
+          text: "ACCEPT",
+          onPress: async () => {
+            try {
+              const response = await consultationService.acceptRequest(requestId)
+
+              if (response.success) {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Request Accepted',
+                  text2: 'Meeting is ready to start'
+                })
+
+                // Navigate to meeting room
+                navigation.navigate("CounsellorMeetingRoom", {
+                  meetingId: response.data.meetingId,
+                  learnerName: learnerName,
+                })
+
+                // Refresh list
+                fetchRequests()
+              } else {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Error',
+                  text2: response.message || 'Failed to accept request'
+                })
+              }
+            } catch (error: any) {
+              console.error('Accept request error:', error)
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: error.response?.data?.message || 'Failed to accept request'
+              })
+            }
+          },
+        },
       ],
+    )
+  }
+
+  const handleReject = async (requestId: number, learnerName: string) => {
+    Alert.alert(
+      "Reject Request",
+      `Reject meeting request from ${learnerName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "REJECT",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await consultationService.rejectRequest(requestId)
+
+              if (response.success) {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Request Rejected'
+                })
+                fetchRequests()
+              } else {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Error',
+                  text2: response.message || 'Failed to reject request'
+                })
+              }
+            } catch (error: any) {
+              console.error('Reject request error:', error)
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: error.response?.data?.message || 'Failed to reject request'
+              })
+            }
+          },
+        },
+      ],
+    )
+  }
+
+  const renderRequest = ({ item }: any) => (
+    <View style={styles.requestCard}>
+      <View style={styles.requestHeader}>
+        <View style={styles.learnerInfo}>
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons name="person" size={24} color={colors.primary} />
+          </View>
+          <View>
+            <Text style={styles.learnerName}>
+              {item.user?.username || item.user?.name || 'Learner'}
+            </Text>
+            <Text style={styles.requestedAt}>
+              {new Date(item.createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+        </View>
+        <View style={[styles.typeBadge, item.requestType === 'INSTANT' && styles.instantBadge]}>
+          <Ionicons 
+            name={item.requestType === 'INSTANT' ? 'flash' : 'calendar'} 
+            size={14} 
+            color={item.requestType === 'INSTANT' ? colors.accent : colors.primary} 
+          />
+          <Text style={[styles.typeText, item.requestType === 'INSTANT' && styles.instantText]}>
+            {item.requestType}
+          </Text>
+        </View>
+      </View>
+
+      {item.scheduledAt && (
+        <View style={styles.scheduledTime}>
+          <Ionicons name="time-outline" size={16} color={colors.primary} />
+          <Text style={styles.scheduledTimeText}>
+            {new Date(item.scheduledAt).toLocaleString()}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.messageBox}>
+        <Text style={styles.messageLabel}>Message:</Text>
+        <Text style={styles.messageText}>{item.message || 'No message provided'}</Text>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.btn, styles.rejectBtn]}
+          onPress={() => handleReject(item.id, item.user?.username || 'Learner')}
+        >
+          <Text style={styles.rejectBtnText}>Reject</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.btn, styles.acceptBtn]}
+          onPress={() => handleAccept(item.id, item.user?.username || 'Learner')}
+        >
+          <Text style={styles.acceptBtnText}>Accept Request</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+
+  if (loading) {
+    return (
+      <SafeAreaProvider style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading requests...</Text>
+        </View>
+      </SafeAreaProvider>
     )
   }
 
@@ -26,7 +214,7 @@ export default function RequestsScreen() {
       <View style={styles.topBar}>
         <View>
           <Text style={styles.greeting}>Welcome Back,</Text>
-          <Text style={styles.userName}>{user?.name}</Text>
+          <Text style={styles.userName}>{user?.name || user?.username || 'Counselor'}</Text>
         </View>
         <View style={styles.topBarActions}>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Profile")}>
@@ -37,55 +225,32 @@ export default function RequestsScreen() {
 
       <View style={styles.header}>
         <Text style={styles.title}>Meeting Requests</Text>
-        <Text style={styles.subtitle}>You have {mockMeetingRequests.length} new requests to review</Text>
+        <Text style={styles.subtitle}>
+          You have {requests.length} {requests.length === 1 ? 'request' : 'requests'} to review
+        </Text>
       </View>
 
       <FlatList
-        data={mockMeetingRequests}
-        keyExtractor={(item) => item.id}
+        data={requests}
+        keyExtractor={(item: any) => item.id.toString()}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.requestCard}>
-            <View style={styles.requestHeader}>
-              <View style={styles.learnerInfo}>
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={24} color={colors.primary} />
-                </View>
-                <View>
-                  <Text style={styles.learnerName}>{item.learnerName}</Text>
-                  <Text style={styles.requestedAt}>Requested on {item.requestedAt}</Text>
-                </View>
-              </View>
-              <View style={styles.timeBadge}>
-                <Ionicons name="time-outline" size={14} color={colors.accent} />
-                <Text style={styles.timeText}>
-                  {item.preferredTime.split(" ")[1]} {item.preferredTime.split(" ")[2]}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.messageBox}>
-              <Text style={styles.messageLabel}>Message:</Text>
-              <Text style={styles.messageText}>{item.message}</Text>
-            </View>
-
-            <View style={styles.footer}>
-              <TouchableOpacity
-                style={[styles.btn, styles.rejectBtn]}
-                onPress={() => handleAction("reject", item.learnerName)}
-              >
-                <Text style={styles.rejectBtnText}>Reject</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.btn, styles.acceptBtn]}
-                onPress={() => handleAction("accept", item.learnerName)}
-              >
-                <Text style={styles.acceptBtnText}>Accept Request</Text>
-              </TouchableOpacity>
-            </View>
+        renderItem={renderRequest}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={64} color={colors.light.textTertiary} />
+            <Text style={styles.emptyText}>No pending requests</Text>
+            <Text style={styles.emptySubtext}>New meeting requests will appear here</Text>
           </View>
-        )}
+        }
       />
+      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -94,6 +259,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.light.textSecondary,
   },
   topBar: {
     flexDirection: "row",
@@ -170,22 +345,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.light.textTertiary,
   },
-  timeBadge: {
+  typeBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFBEB",
+    backgroundColor: `${colors.primary}15`,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: borderRadius.sm,
     gap: 4,
   },
-  timeText: {
+  instantBadge: {
+    backgroundColor: "#FFFBEB",
+  },
+  typeText: {
     fontSize: 12,
     fontWeight: "bold",
+    color: colors.primary,
+  },
+  instantText: {
     color: colors.accent,
   },
+  scheduledTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.md,
+  },
+  scheduledTimeText: {
+    fontSize: 14,
+    color: colors.light.text,
+  },
   messageBox: {
-    backgroundColor: colors.light.surface,
+    backgroundColor: colors.light.background,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginBottom: spacing.md,
@@ -214,6 +405,8 @@ const styles = StyleSheet.create({
   },
   rejectBtn: {
     backgroundColor: colors.light.surface,
+    borderWidth: 1,
+    borderColor: colors.error,
   },
   acceptBtn: {
     backgroundColor: colors.primary,
@@ -226,5 +419,21 @@ const styles = StyleSheet.create({
   acceptBtnText: {
     color: "#FFFFFF",
     fontWeight: "bold",
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl * 2,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.light.text,
+    marginTop: spacing.md,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.light.textSecondary,
+    marginTop: spacing.xs,
   },
 })

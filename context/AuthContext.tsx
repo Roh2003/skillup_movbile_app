@@ -1,82 +1,116 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
+import * as SecureStore from "expo-secure-store"
+import { loginApi, registerApi } from "../lib/userauth.api"
+import Toast from "react-native-toast-message";
 
-type UserRole = "learner" | "counsellor" | null
+type UserRole = "learner" | "counsellor"
+
+interface User {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  username: string
+  phoneNo?: string
+  profileImage?: string
+}
+
+interface RegisterData {
+  firstName: string
+  lastName: string
+  email: string
+  username: string
+  password: string
+}
 
 interface AuthContextType {
-  user: any
-  role: UserRole
-  signIn: (userData: any, role: UserRole) => void
-  login: (email: string, password: string, role: UserRole) => Promise<void>
-  register: (userData: any) => Promise<void>
-  signOut: () => void
+  user: User | null
+  login: (email: string, password: string) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
+  signOut: () => Promise<void>
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any>(null)
-  const [role, setRole] = useState<UserRole>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const signIn = (userData: any, userRole: UserRole) => {
+  // ---------------- LOGIN ----------------
+  const login = async (email: string, password: string) => {
     setIsLoading(true)
-    // Mock login logic
-    setTimeout(() => {
-      setUser(userData)
-      setRole(userRole)
-      setIsLoading(false)
-    }, 1000)
-  }
-
-  const login = async (email: string, password: string, userRole: UserRole) => {
-    setIsLoading(true)
+    console.log("api is hitting is contenct also")
     try {
-      // Mock API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      
-      // Mock user data - replace with actual API response
-      const userData = {
-        email,
-        name: email.split("@")[0], // Mock name from email
-      }
-      
-      setUser(userData)
-      setRole(userRole)
-    } catch (error) {
+      const res = await loginApi({ email, password })
+
+      console.log("response", res)
+      const { user, accessToken } = res.data.data
+
+      await SecureStore.setItemAsync("accessToken", accessToken)
+
+      setUser(user)
+    } catch (error: any) {
+      console.error("Login failed:", error.response?.data || error.message)
       throw error
     } finally {
       setIsLoading(false)
     }
   }
 
-  const register = async (userData: any) => {
+  // ---------------- REGISTER ----------------
+  const register = async (data: RegisterData) => {
     setIsLoading(true)
     try {
-      // Mock API call - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      
-      // After registration, automatically sign in
-      setUser(userData)
-      setRole("learner") // Default to learner role for registration
-    } catch (error) {
+      const res = await registerApi(data)
+
+      const { user } = res.data.data
+      setUser(user)
+        Toast.show({
+          type: "success",
+          text1: "Registration Successful",
+          text2: "You have successfully registered."
+        });
+    } catch (error: any) {
+      console.error("Registration failed:", error.response?.data || error.message)
+        Toast.show({
+          type: "error",
+          text1: "Registration Failed",
+          text2: error.response?.data?.message || error.message || "Something went wrong"
+        });
+
       throw error
     } finally {
       setIsLoading(false)
     }
   }
 
-  const signOut = () => {
+  // ---------------- LOGOUT ----------------
+  const signOut = async () => {
+    await SecureStore.deleteItemAsync("accessToken")
     setUser(null)
-    setRole(null)
   }
 
-  return <AuthContext.Provider value={{ user, role, signIn, login, register, signOut, isLoading }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        register,
+        signOut,
+        isLoading,
+      }}
+    >
+      {children}
+      <Toast />
+    </AuthContext.Provider>
+  )
 }
 
+// ---------------- HOOK ----------------
 export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context

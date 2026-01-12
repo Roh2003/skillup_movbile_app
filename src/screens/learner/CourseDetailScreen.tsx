@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,110 +7,164 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Video } from "expo-av";
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors";
+import courseService from "@/services/course.service";
+import Toast from "react-native-toast-message";
+import { LinearGradient } from "expo-linear-gradient";
 
-// Demo data for one Course with lessons, overview, and reviews
-const DEMO_COURSE = {
-  id: "1",
-  title: "Wireframe Design",
-  category: "Design",
-  level: "Beginner",
-  duration: "10 lessons",
-  enrolled: false,
-  thumbnail:
-    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
-  instructor: "Jane Doe",
-  rating: 4.8,
-  reviewsCount: 123,
-  overview:
-    "Learn how to create effective wireframes and streamline your product design process. In this course, you will get hands-on experience with real-world case studies, tips, and best practices.",
-  requirements: "No prior design experience needed. Laptop & Figma are recommended.",
-  reviews: [
-    {
-      id: "r1",
-      user: "Hema New",
-      userAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
-      rating: 5,
-      date: "2 days ago",
-      text: "Course is well-structured and clear. Lot's of new ideas and real world examples. Totally worth it.",
-      likes: 28,
-    },
-    {
-      id: "r2",
-      user: "Name Here",
-      userAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
-      rating: 4,
-      date: "3 days ago",
-      text: "Great instructor, clean explanations.",
-      likes: 12,
-    },
-  ],
-  curriculum: [
-    {
-      id: "l1",
-      title: "Welcome",
-      duration: "2 min",
-      video: "https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4",
-    },
-    {
-      id: "l2",
-      title: "Course Introduction",
-      duration: "11 min",
-      video: "https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4",
-    },
-    {
-      id: "l3",
-      title: "What is Wireframing?",
-      duration: "14 min",
-      video: "https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4",
-    },
-    {
-      id: "l4",
-      title: "How to Link Fidelity Wireframes?",
-      duration: "21 min",
-      video: "https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4",
-    },
-    {
-      id: "l5",
-      title: "App Wireframe Design",
-      duration: "18 min",
-      video: "https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4",
-    },
-  ],
-};
-
-const TAB_LABELS = ["Overview", "Lesson", "Review"] as const;
+const TAB_LABELS = ["Overview", "Lessons"] as const;
 const { width } = Dimensions.get("window");
 
 export default function CourseDetailScreen() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const [course, setCourse] = useState(DEMO_COURSE);
-  const [selectedTab, setSelectedTab] = useState<"Overview" | "Lesson" | "Review">(
-    "Overview"
-  );
-  const [showDemoVideo, setShowDemoVideo] = useState(false);
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
+  const { courseId } = route.params;
 
-  // Handle "enrollment"
-  const enroll = () => {
-    setCourse({ ...course, enrolled: true });
-    setSelectedTab("Lesson");
+  const [course, setCourse] = useState<any>(null);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState<"Overview" | "Lessons">("Overview");
+  const [enrolling, setEnrolling] = useState(false);
+
+  useEffect(() => {
+    fetchCourseDetails();
+  }, []);
+
+  const fetchCourseDetails = async () => {
+    try {
+      setLoading(true);
+      const [courseRes, lessonsRes] = await Promise.all([
+        courseService.getCourseById(courseId),
+        courseService.getLessons(courseId).catch(() => ({ success: false, data: [] })),
+      ]);
+      
+      console.log("Course response:", courseRes);
+      console.log("Lessons response:", lessonsRes);
+      
+      // Handle different response structures
+      const courseData = courseRes.data || courseRes;
+      const lessonsData = Array.isArray(lessonsRes.data) ? lessonsRes.data : 
+                          Array.isArray(lessonsRes) ? lessonsRes : [];
+      
+      console.log("Course data:", courseData);
+      console.log("Lessons data:", lessonsData);
+      
+      setCourse(courseData);
+      setLessons(lessonsData);
+    } catch (error: any) {
+      console.error("Fetch course error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.response?.data?.message || "Failed to fetch course details",
+      });
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Tab disabling logic (not used, but left if needed for future)
-  const tabDisabled = (tab: (typeof TAB_LABELS)[number]) => {
-    return false;
+  const handleEnroll = async () => {
+    try {
+      setEnrolling(true);
+      console.log("Enrolling in course:", courseId);
+      
+      const response = await courseService.enrollCourse(courseId);
+      console.log("Enrollment response:", response);
+      
+      // Refetch course data to get updated enrollment status
+      await fetchCourseDetails();
+      
+      setSelectedTab("Lessons");
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Successfully enrolled in course!",
+      });
+    } catch (error: any) {
+      console.error("Enroll error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error.response?.data?.message || "Failed to enroll in course",
+      });
+    } finally {
+      setEnrolling(false);
+    }
   };
 
-  // Which lesson items should be locked for not enrolled users
-  const lessonLocked = (lessonIndex: number) => !course.enrolled && lessonIndex > 0;
+  const getVideoUrl = (lesson: any) => {
+    console.log("=== getVideoUrl called ===");
+    console.log("Lesson data:", JSON.stringify(lesson, null, 2));
+    console.log("videoType:", lesson.videoType);
+    console.log("videoId:", lesson.videoId);
+    
+    // If we have a videoId, construct the YouTube URL
+    if (lesson.videoId) {
+      // Check if videoId is already a full URL
+      if (lesson.videoId.includes('youtube.com') || lesson.videoId.includes('youtu.be')) {
+        console.log("✅ videoId is already a full URL:", lesson.videoId);
+        return lesson.videoId;
+      }
+      
+      // Otherwise, construct YouTube URL from videoId
+      const url = `https://www.youtube.com/watch?v=${lesson.videoId}`;
+      console.log("✅ Constructed YouTube URL from videoId:", url);
+      return url;
+    }
+    
+    console.log("❌ No videoId found");
+    return '';
+  };
 
-  // Renderers
+  const handleLessonPress = (lesson: any, index: number) => {
+    console.log("=== handleLessonPress called ===");
+    console.log("Lesson index:", index);
+    console.log("Lesson:", lesson);
+    console.log("Course enrolled:", course.isEnrolled);
+    
+    // First lesson is always free preview
+    if (!course.isEnrolled && index > 0) {
+      Toast.show({
+        type: "info",
+        text1: "Enrollment Required",
+        text2: "Please enroll to access all lessons",
+      });
+      return;
+    }
+
+    const videoUrl = getVideoUrl(lesson);
+    console.log("Video URL to pass:", videoUrl);
+    
+    if (!videoUrl) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Video URL not available for this lesson",
+      });
+      return;
+    }
+
+    console.log("=== Navigating to VideoPlayer ===");
+    console.log("Navigation params:", {
+      lessonId: lesson.id,
+      courseId: course.id,
+      lessonTitle: lesson.title,
+      videoUrl: videoUrl,
+    });
+
+    navigation.navigate("VideoPlayer", {
+      lessonId: lesson.id,
+      courseId: course.id,
+      lessonTitle: lesson.title,
+      videoUrl: videoUrl,
+    });
+  };
 
   function renderOverview() {
     return (
@@ -122,19 +176,40 @@ export default function CourseDetailScreen() {
         <Text style={styles.sectionTitle}>Course Overview</Text>
         <Text style={styles.title}>{course.title}</Text>
         <View style={styles.overviewStatsRow}>
-          <Ionicons name="star" color="#FFAC33" size={16} />
-          <Text style={styles.ratingText}>
-            {course.rating} ({course.reviewsCount})
-          </Text>
-          <Ionicons name="stats-chart-outline" size={16} color={colors.primary} style={{ marginLeft: 16 }} />
+          <Ionicons name="stats-chart-outline" size={16} color={colors.primary} />
           <Text style={styles.metaText}>{course.level}</Text>
           <Ionicons name="time-outline" size={16} color={colors.primary} style={{ marginLeft: 16 }} />
-          <Text style={styles.metaText}>{course.duration}</Text>
+          <Text style={styles.metaText}>{course.duration || "N/A"}</Text>
+          {course.price && (
+            <>
+              <Ionicons name="cash-outline" size={16} color={colors.success} style={{ marginLeft: 16 }} />
+              <Text style={styles.priceText}>₹{course.price}</Text>
+            </>
+          )}
         </View>
+
         <Text style={styles.sectionLabel}>Description</Text>
-        <Text style={styles.description}>{course.overview}</Text>
-        <Text style={styles.sectionLabel}>Requirements</Text>
-        <Text style={styles.requirementsText}>{course.requirements}</Text>
+        <Text style={styles.description}>{course.description || "No description available"}</Text>
+
+        <Text style={styles.sectionLabel}>Instructor</Text>
+        <View style={styles.instructorCard}>
+          <View style={styles.instructorAvatar}>
+            <Ionicons name="person" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.instructorInfo}>
+            <Text style={styles.instructorName}>{course.instructor || "Instructor"}</Text>
+            <Text style={styles.instructorRole}>Course Instructor</Text>
+          </View>
+        </View>
+
+        {course.category && (
+          <>
+            <Text style={styles.sectionLabel}>Category</Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{course.category}</Text>
+            </View>
+          </>
+        )}
       </ScrollView>
     );
   }
@@ -146,152 +221,134 @@ export default function CourseDetailScreen() {
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        {course.curriculum.map((lesson, idx) => {
-          const locked = lessonLocked(idx);
-          let iconName = locked ? "lock-closed" : "play-circle";
-          let iconColor = locked ? colors.light.textTertiary : colors.primary;
+        <Text style={styles.sectionTitle}>Course Curriculum</Text>
+        <Text style={styles.lessonCount}>{lessons.length} Lessons</Text>
 
-          return (
-            <TouchableOpacity
-              key={lesson.id}
-              style={[styles.lessonItem, locked && styles.lockedLesson]}
-              onPress={() => {
-                if (locked) return;
-                if (idx === 0 && !course.enrolled) {
-                  setShowDemoVideo(true);
-                } else {
-                  // @ts-ignore: navigation type not strictly checked here
-                  navigation.navigate?.("VideoPlayer", { lessonId: lesson.id });
-                }
-              }}
-              activeOpacity={locked ? 1 : 0.7}
-            >
-              <View style={styles.lessonNumber}>
-                <Text style={styles.lessonNumberText}>{idx + 1}</Text>
-              </View>
-              <View style={styles.lessonInfo}>
-                <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-              </View>
-              <Ionicons name={iconName as any} size={24} color={iconColor} />
-            </TouchableOpacity>
-          );
-        })}
-        {/* Demo video modal inline */}
-        {showDemoVideo && (
-          <View style={styles.demoVideoWrapper}>
-            <Text style={styles.demoVideoLabel}>Demo Video Preview</Text>
-            <Video
-              source={{ uri: course.curriculum[0].video }}
-              style={styles.demoVideo}
-              useNativeControls
-              resizeMode="contain"
-              isLooping={false}
-            />
-            <TouchableOpacity
-              onPress={() => setShowDemoVideo(false)}
-              style={styles.closeVideoBtn}
-            >
-              <Ionicons name="close-circle" size={32} color="#fff" />
-            </TouchableOpacity>
+        {lessons.length > 0 ? (
+          lessons.map((lesson, idx) => {
+            const locked = !course.isEnrolled && idx > 0;
+            const iconName = locked ? "lock-closed" : "play-circle";
+            const iconColor = locked ? colors.light.textTertiary : colors.primary;
+
+            return (
+              <TouchableOpacity
+                key={lesson.id}
+                style={[styles.lessonItem, locked && styles.lockedLesson]}
+                onPress={() => handleLessonPress(lesson, idx)}
+                activeOpacity={locked ? 1 : 0.7}
+              >
+                <View style={styles.lessonNumber}>
+                  <Text style={styles.lessonNumberText}>{idx + 1}</Text>
+                </View>
+                <View style={styles.lessonInfo}>
+                  <Text style={styles.lessonTitle}>{lesson.title}</Text>
+                  <Text style={styles.lessonDuration}>
+                    {lesson.duration || "Video lesson"}
+                    {idx === 0 && !course.isEnrolled && " • Free Preview"}
+                  </Text>
+                </View>
+                <Ionicons name={iconName as any} size={24} color={iconColor} />
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <View style={styles.emptyLessons}>
+            <Ionicons name="videocam-outline" size={48} color={colors.light.textTertiary} />
+            <Text style={styles.emptyText}>No lessons available yet</Text>
           </View>
         )}
       </ScrollView>
     );
   }
 
-  function renderReviews() {
+  if (loading) {
     return (
-      <ScrollView
-        style={styles.tabScroll}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.sectionTitle}>Reviews</Text>
-        {course.reviews.map((review) => (
-          <View style={styles.reviewItem} key={review.id}>
-            <View style={styles.reviewHeader}>
-              <Image
-                source={{ uri: review.userAvatar }}
-                style={styles.reviewAvatar}
-              />
-              <View style={styles.reviewUserCol}>
-                <Text style={styles.reviewUser}>{review.user}</Text>
-                <View style={styles.reviewStarsRow}>
-                  {[...Array(5)].map((_, i) => (
-                    <Ionicons
-                      key={i}
-                      name="star"
-                      size={13}
-                      color={i < review.rating ? "#FFAC33" : "#E2E8F0"}
-                      style={{ marginRight: 2 }}
-                    />
-                  ))}
-                </View>
-              </View>
-              <Text style={styles.reviewDate}>{review.date}</Text>
-            </View>
-            <Text style={styles.reviewText}>{review.text}</Text>
-            <View style={styles.reviewFooter}>
-              <Ionicons name="thumbs-up-outline" size={16} color={colors.primary} />
-              <Text style={styles.reviewLikes}>{review.likes}</Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading course...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
+
+  if (!course) return null;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: course.isEnrolled ? 24 : 100 }}
       >
-        <Image source={{ uri: course.thumbnail }} style={styles.heroImage} />
+        {/* Hero Image with Gradient Overlay */}
+        <View style={styles.heroContainer}>
+          <Image
+            source={{ uri: course.thumbnailUrl || "https://via.placeholder.com/800x240" }}
+            style={styles.heroImage}
+          />
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.7)"]}
+            style={styles.heroGradient}
+          >
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Tabs */}
         <View style={styles.courseTabsBar}>
           {TAB_LABELS.map((tab) => {
             const isActive = selectedTab === tab;
-            const disabled = tabDisabled(tab);
             return (
               <TouchableOpacity
                 key={tab}
-                style={[
-                  styles.tabBtn,
-                  isActive && styles.tabBtnActive,
-                  disabled && styles.tabBtnDisabled,
-                ]}
-                onPress={() => !disabled && setSelectedTab(tab as any)}
-                disabled={!!disabled}
-                activeOpacity={disabled ? 1 : 0.8}
+                style={[styles.tabBtn, isActive && styles.tabBtnActive]}
+                onPress={() => setSelectedTab(tab as any)}
+                activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.tabBtnText,
-                    isActive && styles.tabBtnTextActive,
-                    disabled && styles.tabBtnTextDisabled,
-                  ]}
-                >
+                <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]}>
                   {tab}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
+
+        {/* Tab Content */}
         <View style={styles.tabContentArea}>
           {selectedTab === "Overview" && renderOverview()}
-          {selectedTab === "Lesson" && renderLessons()}
-          {selectedTab === "Review" && renderReviews()}
+          {selectedTab === "Lessons" && renderLessons()}
         </View>
       </ScrollView>
-      {!course.enrolled && (
+
+      {/* Enroll Button */}
+      {!course.isEnrolled && (
         <View style={styles.bottomCta}>
-          <TouchableOpacity style={styles.enrollButton} onPress={enroll} activeOpacity={0.8}>
-            <Text style={styles.enrollButtonText}>GET ENROLLED</Text>
+          <TouchableOpacity
+            style={[styles.enrollButton, enrolling && styles.enrollButtonDisabled]}
+            onPress={handleEnroll}
+            activeOpacity={0.8}
+            disabled={enrolling}
+          >
+            {enrolling ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.enrollButtonText}>ENROLL NOW</Text>
+                {course.price && (
+                  <Text style={styles.enrollPrice}>₹{course.price}</Text>
+                )}
+              </>
+            )}
           </TouchableOpacity>
         </View>
       )}
+      <Toast />
     </SafeAreaView>
   );
 }
@@ -301,13 +358,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.light.textSecondary,
+  },
+  heroContainer: {
+    position: "relative",
+  },
   heroImage: {
     width: "100%",
     height: 240,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    marginBottom: spacing.md,
     resizeMode: "cover",
+  },
+  heroGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 240,
+    justifyContent: "flex-start",
+    padding: spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   courseTabsBar: {
     flexDirection: "row",
@@ -317,9 +401,9 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginHorizontal: spacing.md,
     marginBottom: spacing.md,
-    marginTop: -40,
+    marginTop: -30,
     paddingVertical: 6,
-    ...shadows.sm,
+    ...shadows.md,
   },
   tabBtn: {
     flex: 1,
@@ -333,9 +417,6 @@ const styles = StyleSheet.create({
   tabBtnActive: {
     backgroundColor: colors.primary,
   },
-  tabBtnDisabled: {
-    opacity: 0.45,
-  },
   tabBtnText: {
     fontSize: 16,
     color: colors.light.text,
@@ -345,16 +426,12 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "bold",
   },
-  tabBtnTextDisabled: {
-    color: colors.light.textTertiary,
-  },
   tabContentArea: {
     minHeight: width / 1.1,
     backgroundColor: "#fff",
     borderRadius: borderRadius.md,
     marginHorizontal: spacing.md,
     padding: spacing.md,
-    // no shadow, flat body
   },
   tabScroll: {
     flex: 1,
@@ -366,29 +443,34 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     color: colors.light.text,
   },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: colors.light.text,
+    marginBottom: spacing.sm,
+  },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
-    color: colors.light.textTertiary,
+    color: colors.light.text,
   },
   overviewStatsRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     gap: 8,
-  },
-  ratingText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFAC33",
-    marginLeft: 4,
-    marginRight: 16,
   },
   metaText: {
     fontSize: 14,
     color: colors.light.textSecondary,
+    marginLeft: 4,
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: colors.success,
     marginLeft: 4,
   },
   description: {
@@ -397,10 +479,52 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: spacing.md,
   },
-  requirementsText: {
+  instructorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.light.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  instructorAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#E0E7FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.md,
+  },
+  instructorInfo: {
+    flex: 1,
+  },
+  instructorName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: colors.light.text,
+  },
+  instructorRole: {
+    fontSize: 12,
+    color: colors.light.textSecondary,
+    marginTop: 2,
+  },
+  categoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.primary,
+  },
+  lessonCount: {
     fontSize: 14,
     color: colors.light.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   lessonItem: {
     flexDirection: "row",
@@ -413,17 +537,17 @@ const styles = StyleSheet.create({
     borderColor: colors.light.border,
   },
   lockedLesson: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   lessonNumber: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.light.background,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.primary,
   },
   lessonNumberText: {
@@ -444,91 +568,14 @@ const styles = StyleSheet.create({
     color: colors.light.textSecondary,
     marginTop: 2,
   },
-  demoVideoWrapper: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(10,10,40,0.95)",
-    justifyContent: "center",
+  emptyLessons: {
     alignItems: "center",
-    zIndex: 20,
-    padding: spacing.lg,
+    paddingVertical: spacing.xl * 2,
   },
-  demoVideoLabel: {
-    color: "#fff",
-    fontWeight: "bold",
-    marginBottom: 10,
-    fontSize: 18,
-  },
-  demoVideo: {
-    width: width * 0.85,
-    height: width * 0.48,
-    borderRadius: borderRadius.md,
-    backgroundColor: "#222",
-    marginBottom: 18,
-  },
-  closeVideoBtn: {
-    marginTop: 4,
-    alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.38)",
-    borderRadius: 32,
-    padding: 4,
-  },
-  reviewItem: {
-    backgroundColor: colors.light.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.light.border,
-  },
-  reviewHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  reviewAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#E0E7FF",
-    marginRight: 10,
-  },
-  reviewUserCol: {
-    flex: 1,
-    marginLeft: 4,
-    justifyContent: "center",
-  },
-  reviewUser: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  reviewStarsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-  },
-  reviewDate: {
-    fontSize: 11,
-    color: colors.light.textTertiary,
-    marginLeft: 6,
-  },
-  reviewText: {
-    fontSize: 14,
-    color: colors.light.text,
-    marginBottom: 6,
-  },
-  reviewFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  reviewLikes: {
-    marginLeft: 5,
-    fontSize: 13,
+  emptyText: {
+    fontSize: 16,
     color: colors.light.textSecondary,
+    marginTop: spacing.md,
   },
   bottomCta: {
     padding: spacing.lg,
@@ -546,14 +593,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     height: 56,
     borderRadius: borderRadius.md,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: spacing.md,
     ...shadows.md,
+  },
+  enrollButtonDisabled: {
+    opacity: 0.7,
   },
   enrollButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
   },
+  enrollPrice: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
-

@@ -2,13 +2,13 @@
   "expo": {
     "name": "SkillUp",
     "slug": "skillup",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./public/skilluplogo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./public/apple-icon.png",
+      "image": "./public/skilluplogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./public/apple-icon.png",
+        "foregroundImage": "./public/skilluplogo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.skillup.mobile.app"
@@ -30,6 +30,9 @@
       "eas": {
         "projectId": "de7fc6b5-d22f-4d6f-9225-3c001b52aeef"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

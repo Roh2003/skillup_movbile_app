@@ -1,14 +1,58 @@
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { typography } from "@/theme/typography"
-import { mockCourses } from "@/data/mockData"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
+import { useState, useEffect } from "react"
+import courseService from "@/services/course.service"
+import Toast from "react-native-toast-message"
+import { Ionicons } from "@expo/vector-icons"
 
 
 export default function MyLearningScreen() {
   const navigation = useNavigation<any>()
-  const enrolledCourses = mockCourses.filter((c) => c.enrolled)
+  const [enrolledCourses, setEnrolledCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  useEffect(() => {
+    fetchEnrolledCourses()
+  }, [])
+
+  const fetchEnrolledCourses = async () => {
+    try {
+      setLoading(true)
+      const response = await courseService.getEnrolledCourses()
+      console.log("Enrolled courses:", response)
+      setEnrolledCourses(response.data || [])
+    } catch (error: any) {
+      console.error('Fetch enrolled courses error:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.response?.data?.message || 'Failed to fetch enrolled courses'
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchEnrolledCourses()
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaProvider style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading your courses...</Text>
+        </View>
+      </SafeAreaProvider>
+    )
+  }
 
   return (
     <SafeAreaProvider style={styles.container}>
@@ -19,27 +63,34 @@ export default function MyLearningScreen() {
 
       <FlatList
         data={enrolledCourses}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id.toString()}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        renderItem={({ item }: any) => (
           <TouchableOpacity
             style={styles.courseCard}
             onPress={() => navigation.navigate("CourseDetail", { courseId: item.id })}
           >
-            <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+            <Image source={{ uri: item.thumbnailUrl || 'https://via.placeholder.com/400x180' }} style={styles.thumbnail} />
             <View style={styles.info}>
-              <Text style={styles.instructor}>{item.instructor}</Text>
+              <Text style={styles.instructor}>{item.instructor || 'Instructor'}</Text>
               <Text style={styles.title}>{item.title}</Text>
               <View style={styles.progressContainer}>
                 <View style={styles.progressHeader}>
                   <Text style={styles.progressLabel}>Progress</Text>
-                  <Text style={styles.progressPercent}>{item.progress}%</Text>
+                  <Text style={styles.progressPercent}>{item.progress || 0}%</Text>
                 </View>
                 <View style={styles.progressBg}>
                   <View
                     style={[
                       styles.progressFill,
-                      { width: typeof item.progress === "number" ? `${item.progress}%` : "0%" },
+                      { width: `${item.progress || 0}%` },
                     ]}
                   />
                 </View>
@@ -49,6 +100,7 @@ export default function MyLearningScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
+            <Ionicons name="book-outline" size={64} color={colors.light.textTertiary} />
             <Text style={styles.emptyText}>You haven't enrolled in any courses yet.</Text>
             <TouchableOpacity style={styles.browseButton} onPress={() => navigation.navigate("Courses")}>
               <Text style={styles.browseButtonText}>Browse Courses</Text>
@@ -56,6 +108,7 @@ export default function MyLearningScreen() {
           </View>
         }
       />
+      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -64,6 +117,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    color: colors.light.textSecondary,
   },
   header: {
     padding: spacing.lg,

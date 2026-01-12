@@ -17,16 +17,20 @@ import { useAuth } from "../../../context/AuthContext"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
+import Toast from "react-native-toast-message"
 
 export default function LearnerRegisterScreen() {
   const navigation = useNavigation<any>()
   const { register } = useAuth()
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+      firstName : "",
+      lastName : "",
+      phoneNo: "",
+      email: "",
+      username: "",
+      password : "",
+      confirmPassword : ""
   })
 
   const [loading, setLoading] = useState(false)
@@ -38,9 +42,9 @@ export default function LearnerRegisterScreen() {
   }
 
   const handleRegister = async () => {
-    const { name, email, password, confirmPassword } = formData
+    const { firstName, lastName, email, username, password, phoneNo , confirmPassword} = formData
 
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password || !username || !phoneNo) {
       Alert.alert("Error", "Please fill required fields")
       return
     }
@@ -52,16 +56,20 @@ export default function LearnerRegisterScreen() {
 
     setLoading(true)
     try {
-      await register({
-        ...formData,
-        mobile: "",
-        skills: "",
-        interestedField: "",
-        careerGoal: "",
-        skills: [],
+      const { confirmPassword, ...registerData } = formData
+      await register(registerData)
+      Toast.show({
+        type: "success",
+        text1: "Registration successful 🎉",
+        text2: "You can now log in to your account",
       })
-    } catch {
-      Alert.alert("Registration failed", "Try again later")
+      navigation.navigate("LearnerLogin")
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Registration failed",
+        text2: error.response?.data?.message || error.message || "Something went wrong",
+      })
     } finally {
       setLoading(false)
     }
@@ -84,7 +92,7 @@ export default function LearnerRegisterScreen() {
           {/* Illustration */}
           <View style={styles.illustrationContainer}>
             <View style={styles.illustration}>
-              <Ionicons name="person-add-outline" size={100} color={colors.primary} />
+              <Ionicons name="person-add-outline" size={50} color={colors.primary} />
             </View>
           </View>
 
@@ -92,26 +100,37 @@ export default function LearnerRegisterScreen() {
           <View style={styles.content}>
             <Text style={styles.title}>Sign Up</Text>
             <Text style={styles.subtitle}>
-              Lorem ipsum dolor sit amet a aconsectetur
+              Begin your learning adventure—create your free account today!
             </Text>
 
             {/* Form */}
             <View style={styles.form}>
-              {/* Full Name Input */}
+              {/* first Name Input */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Full Name</Text>
+                <Text style={styles.label}>First Name</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your Name Here"
+                  placeholder="Your first Name "
                   placeholderTextColor={colors.light.textTertiary}
-                  value={formData.name}
-                  onChangeText={(v) => updateForm("name", v)}
+                  value={formData.firstName}
+                  onChangeText={(v) => updateForm("firstName", v)}
+                />
+              </View>
+              { /* last name */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Last Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Your last Name "
+                  placeholderTextColor={colors.light.textTertiary}
+                  value={formData.lastName}
+                  onChangeText={(v) => updateForm("lastName", v)}
                 />
               </View>
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email Here</Text>
+                <Text style={styles.label}>Email</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Contact@gmail.com"
@@ -120,6 +139,32 @@ export default function LearnerRegisterScreen() {
                   autoCapitalize="none"
                   value={formData.email}
                   onChangeText={(v) => updateForm("email", v)}
+                />
+              </View>
+
+              {/* Username Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Username</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Your username"
+                  placeholderTextColor={colors.light.textTertiary}
+                  autoCapitalize="none"
+                  value={formData.username}
+                  onChangeText={(v) => updateForm("username", v)}
+                /> 
+              </View>
+
+              {/* Phone Number Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. 08012345678"
+                  placeholderTextColor={colors.light.textTertiary}
+                  keyboardType="phone-pad"
+                  value={formData.phoneNo}
+                  onChangeText={(v) => updateForm("phoneNo", v)}
                 />
               </View>
 
@@ -209,6 +254,7 @@ export default function LearnerRegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Toast />
     </SafeAreaView>
   )
 }
@@ -232,13 +278,13 @@ const styles = StyleSheet.create({
   },
   illustrationContainer: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   illustration: {
-    width: 200,
-    height: 200,
+    width: 100,
+    height: 100,
     backgroundColor: colors.green[50],
-    borderRadius: 100,
+    borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
   },

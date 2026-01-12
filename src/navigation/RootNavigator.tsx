@@ -33,12 +33,18 @@ import ChatScreen from "@/screens/learner/ChatScreen"
 import SettingsScreen from "@/screens/learner/SettingsScreen"
 import OptionsScreen from "@/screens/learner/OptionsScreen"
 import EditProfileScreen from "@/screens/learner/EditProfileScreen"
+import ChallengeDetailScreen from "@/screens/learner/ChallengeDetailScreen"
+import LeaderboardScreen from "@/screens/learner/LeaderboardScreen"
+import MeetingRequestScreen from "@/screens/learner/MeetingRequestScreen"
+import MeetingRoomScreen from "@/screens/learner/MeetingRoomScreen"
 
 // Counsellor
 import RequestsScreen from "@/screens/counsellor/RequestsScreen"
 import ScheduleScreen from "@/screens/counsellor/ScheduleScreen"
 import EarningsScreen from "@/screens/counsellor/EarningsScreen"
 import CompletedScreen from "@/screens/counsellor/CompletedScreen"
+import CounsellorMeetingRoomScreen from "@/screens/counsellor/CounsellorMeetingRoomScreen"
+
 
 const RootStack = createNativeStackNavigator<RootStackParamList>()
 const LearnerTabs = createBottomTabNavigator<LearnerTabParamList>()
@@ -170,6 +176,11 @@ export default function RootNavigator() {
       <RootStack.Screen name="Chat" component={ChatScreen} />
       <RootStack.Screen name="Settings" component={SettingsScreen} />
       <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
+      <RootStack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} />
+      <RootStack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <RootStack.Screen name="MeetingRequest" component={MeetingRequestScreen} />
+      <RootStack.Screen name="MeetingRoom" component={MeetingRoomScreen} />
+      <RootStack.Screen name="CounsellorMeetingRoom" component={CounsellorMeetingRoomScreen} />
     </RootStack.Navigator>
   )
 }

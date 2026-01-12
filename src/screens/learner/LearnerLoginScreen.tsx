@@ -17,10 +17,11 @@ import { useAuth } from "../../../context/AuthContext"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
+import Toast from "react-native-toast-message"
 
 export default function LearnerLoginScreen() {
   const navigation = useNavigation<any>()
-  const { login } = useAuth()
+  const { login , user } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -32,12 +33,23 @@ export default function LearnerLoginScreen() {
       Alert.alert("Error", "Please enter email and password")
       return
     }
-
     setLoading(true)
     try {
-      await login(email, password, "learner")
+      console.log("api is hiiting")
+      await login(email, password)
+      Toast.show({
+        type: "success",
+        text1: "Login successful 🎉",
+        text2: "Welcome back to SkillUp",
+      })
+      navigation.navigate("LearnerMain")
+      
     } catch {
-      Alert.alert("Login Failed", "Invalid credentials")
+      Toast.show({
+        type: "error",
+        text1: "Login failed",
+        text2: "Invalid email or password",
+      })
     } finally {
       setLoading(false)
     }
@@ -159,7 +171,9 @@ export default function LearnerLoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Toast />
     </SafeAreaView>
+    
   )
 }
 
