@@ -23,7 +23,14 @@ export type RootStackParamList = {
   CounsellorMeetingRoom: { meetingId: string }
   LearnerMain: undefined
   CounsellorMain: undefined
+  CounsellorDashboard: undefined
   ConsultationRequest: { counsellorId: string }
+  CounselorProfile: { counselorId: string }
+  ScheduleMeeting: { counselorId: string }
+  MyConsultations: undefined
+  WaitingRoom: { meetingId: string }
+  VideoCall: { meetingId: string; channelName: string; token: string }
+  MeetingSummary: { meetingId: string }
 }
 
 export type LearnerTabParamList = {

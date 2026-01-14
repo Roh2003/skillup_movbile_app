@@ -74,7 +74,7 @@ export default function RoleSelectionScreen() {
         <TouchableOpacity
           style={styles.counsellorCard}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate("LearnerMain")}
+          onPress={() => navigation.navigate("CounsellorLogin")}
         >
           <View style={styles.cardHeader}>
             <View style={styles.counsellorIconContainer}>

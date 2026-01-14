@@ -80,6 +80,7 @@ export default function ConsultationScreen() {
     <TouchableOpacity
       style={styles.counsellorCard}
       activeOpacity={0.9}
+      onPress={() => navigation.navigate("CounselorProfile", { counselor: item })}
     >
       <View style={styles.avatarContainer}>
         {item.profileImage ? (
@@ -115,28 +116,18 @@ export default function ConsultationScreen() {
           <Text style={styles.experience}>{item.experience} years experience</Text>
         )}
 
-        <View style={styles.actions}>
-          <TouchableOpacity 
-            style={[styles.actionBtn, !item.isActive && styles.actionBtnDisabled]}
-            onPress={() => handleVideoCall(item)}
-            disabled={!item.isActive}
-          >
-            <Ionicons 
-              name="videocam" 
-              size={18} 
-              color={item.isActive ? colors.primary : colors.light.textTertiary} 
-            />
-            <Text style={[styles.actionText, !item.isActive && styles.actionTextDisabled]}>
-              {item.isActive ? 'Video Call' : 'Offline'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionBtn}
-            onPress={() => handleSchedule(item)}
-          >
-            <Ionicons name="calendar" size={18} color={colors.primary} />
-            <Text style={styles.actionText}>Schedule</Text>
-          </TouchableOpacity>
+        {/* Status Badge */}
+        <View style={styles.statusBadge}>
+          <View style={[
+            styles.statusIndicator,
+            { backgroundColor: item.isActive ? colors.success : colors.light.textTertiary }
+          ]} />
+          <Text style={[
+            styles.statusText,
+            { color: item.isActive ? colors.success : colors.light.textSecondary }
+          ]}>
+            {item.isActive ? 'ONLINE' : 'OFFLINE'}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -348,6 +339,21 @@ const styles = StyleSheet.create({
   },
   actionTextDisabled: {
     color: colors.light.textTertiary,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    gap: 6,
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   emptyContainer: {
     alignItems: 'center',

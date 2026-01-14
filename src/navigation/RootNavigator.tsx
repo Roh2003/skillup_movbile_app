@@ -44,6 +44,12 @@ import ScheduleScreen from "@/screens/counsellor/ScheduleScreen"
 import EarningsScreen from "@/screens/counsellor/EarningsScreen"
 import CompletedScreen from "@/screens/counsellor/CompletedScreen"
 import CounsellorMeetingRoomScreen from "@/screens/counsellor/CounsellorMeetingRoomScreen"
+import CounselorProfileScreen from "@/screens/learner/CounselorProfileScreen"
+import ScheduleMeetingScreen from "@/screens/learner/ScheduleMeetingScreen"
+import MyConsultationsScreen from "@/screens/learner/MyConsultationsScreen"
+import WaitingRoomScreen from "@/screens/learner/WaitingRoomScreen"
+import VideoCallScreen from "@/screens/learner/VideoCallScreen"
+import MeetingSummaryScreen from "@/screens/learner/MeetingSummaryScreen"
 
 
 const RootStack = createNativeStackNavigator<RootStackParamList>()
@@ -174,6 +180,13 @@ export default function RootNavigator() {
       <RootStack.Screen name="Options" component={OptionsScreen} />
       <RootStack.Screen name="Bookmarks" component={BookmarksScreen} />
       <RootStack.Screen name="Chat" component={ChatScreen} />
+      <RootStack.Screen name="CounselorProfile" component={CounselorProfileScreen} />
+      <RootStack.Screen name="ScheduleMeeting" component={ScheduleMeetingScreen} />
+      <RootStack.Screen name="MyConsultations" component={MyConsultationsScreen} />
+      <RootStack.Screen name="WaitingRoom" component={WaitingRoomScreen} />
+      <RootStack.Screen name="VideoCall" component={VideoCallScreen} />
+      <RootStack.Screen name="MeetingSummary" component={MeetingSummaryScreen} />
+      <RootStack.Screen name="CounsellorDashboard" component={CounsellorTabNavigator} />
       <RootStack.Screen name="Settings" component={SettingsScreen} />
       <RootStack.Screen name="EditProfile" component={EditProfileScreen} />
       <RootStack.Screen name="ChallengeDetail" component={ChallengeDetailScreen} />

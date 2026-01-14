@@ -13,14 +13,14 @@ import {
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
-import { useAuth } from "../../../context/AuthContext"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
+import authService from "@/services/auth.service"
+import * as SecureStore from 'expo-secure-store'
 
 export default function CounsellorLoginScreen() {
   const navigation = useNavigation<any>()
-  const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -34,9 +34,22 @@ export default function CounsellorLoginScreen() {
 
     setLoading(true)
     try {
-      await login(email, password, "counsellor")
-    } catch (error) {
-      Alert.alert("Login Failed", "Invalid credentials or account not approved")
+      const response = await authService.counselorLogin({ email, password })
+
+        await SecureStore.setItemAsync('accessToken', response.data.token)
+        
+        Alert.alert("Success", "Login successful!", [
+          {
+            text: "OK",
+            onPress: () => navigation.replace("CounsellorDashboard")
+          }
+        ])
+    } catch (error: any) {
+      console.error("Login error:", error)
+      Alert.alert(
+        "Login Failed", 
+        error.response?.data?.message || "Invalid credentials or account not approved"
+      )
     } finally {
       setLoading(false)
     }

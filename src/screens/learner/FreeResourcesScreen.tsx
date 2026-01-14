@@ -31,7 +31,7 @@ export default function FreeResourcesScreen() {
       const params: any = {}
       
       if (activeCategory !== "all") {
-        params.category = activeCategory
+        params.category = activeCategory.toUpperCase() // Backend expects uppercase
       }
       
       if (searchQuery) {
@@ -39,16 +39,24 @@ export default function FreeResourcesScreen() {
       }
 
       const response = await resourceService.getAllResources(params)
-    
-      setResources(response.data)
+      console.log("=== RESOURCE RESPONSE ===")
+      console.log("Full response:", response)
+      console.log("Response data:", response.data)
+      
+      // The service already returns response.data, which contains { status, data, message }
+      // So response.data is the array of resources
+      setResources(response.data || [])
 
     } catch (error: any) {
-      console.error('Fetch resources error:', error)
+      console.error('=== FETCH RESOURCES ERROR ===')
+      console.error('Error:', error)
+      console.error('Error response:', error.response)
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch resources'
       })
+      setResources([]) // Set empty array on error
     } finally {
       setLoading(false)
       setRefreshing(false)
