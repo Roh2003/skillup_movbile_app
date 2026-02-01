@@ -17,7 +17,6 @@ import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
 import authService from "@/services/auth.service"
-import * as SecureStore from 'expo-secure-store'
 
 export default function CounsellorLoginScreen() {
   const navigation = useNavigation<any>()
@@ -35,15 +34,17 @@ export default function CounsellorLoginScreen() {
     setLoading(true)
     try {
       const response = await authService.counselorLogin({ email, password })
+      console.log("response", response)
 
-        await SecureStore.setItemAsync('accessToken', response.data.token)
+      // Token is already stored by authService.counselorLogin in AsyncStorage
+      // No need to store it again here
         
-        Alert.alert("Success", "Login successful!", [
-          {
-            text: "OK",
-            onPress: () => navigation.replace("CounsellorDashboard")
-          }
-        ])
+      Alert.alert("Success", "Login successful!", [
+        {
+          text: "OK",
+          onPress: () => navigation.replace("CounsellorMain")
+        }
+      ])
     } catch (error: any) {
       console.error("Login error:", error)
       Alert.alert(

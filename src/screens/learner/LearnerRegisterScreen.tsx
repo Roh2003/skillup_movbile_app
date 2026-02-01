@@ -13,15 +13,14 @@ import {
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
-import { useAuth } from "../../../context/AuthContext"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
 import Toast from "react-native-toast-message"
+import authService from "@/services/auth.service"
 
 export default function LearnerRegisterScreen() {
   const navigation = useNavigation<any>()
-  const { register } = useAuth()
 
   const [formData, setFormData] = useState({
       firstName : "",
@@ -57,14 +56,25 @@ export default function LearnerRegisterScreen() {
     setLoading(true)
     try {
       const { confirmPassword, ...registerData } = formData
-      await register(registerData)
-      Toast.show({
-        type: "success",
-        text1: "Registration successful 🎉",
-        text2: "You can now log in to your account",
-      })
-      navigation.navigate("LearnerLogin")
+      console.log("🔐 Starting registration process...")
+      const response = await authService.learnerRegister(registerData)
+      
+      if (response.success) {
+        Toast.show({
+          type: "success",
+          text1: "Registration successful 🎉",
+          text2: "You can now log in to your account",
+        })
+        navigation.navigate("LearnerLogin")
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Registration failed",
+          text2: response.message || "Something went wrong",
+        })
+      }
     } catch (error: any) {
+      console.error("Registration error:", error)
       Toast.show({
         type: "error",
         text1: "Registration failed",

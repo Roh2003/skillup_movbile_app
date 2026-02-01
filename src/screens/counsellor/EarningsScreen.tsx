@@ -1,16 +1,83 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaProvider, TouchableOpacity, Dimensions } from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { Ionicons } from "@expo/vector-icons"
-import { mockCompletedMeetings } from "@/data/mockData"
+import consultationService from "@/services/consultation.service"
+import Toast from "react-native-toast-message"
 
 const { width } = Dimensions.get("window")
 
 export default function EarningsScreen() {
-  const totalEarnings = mockCompletedMeetings.reduce((sum, m) => sum + (m.earnings || 0), 0)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [revenueData, setRevenueData] = useState<any>(null)
+  const [selectedFilter, setSelectedFilter] = useState(0)
+
+  useEffect(() => {
+    fetchRevenue()
+  }, [])
+
+  const fetchRevenue = async () => {
+    try {
+      setLoading(true)
+      const response = await consultationService.getCounselorRevenue()
+
+      if (response.success) {
+        setRevenueData(response.data)
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to fetch revenue data'
+        })
+      }
+    } catch (error: any) {
+      console.error('Fetch revenue error:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.response?.data?.message || 'Failed to fetch revenue'
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchRevenue()
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading earnings...</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  const totalEarnings = revenueData?.totalRevenue || 0
+  const totalMeetings = revenueData?.totalMeetings || 0
+  const meetings = revenueData?.meetings || []
+  const revenuePerMeeting = revenueData?.revenuePerMeeting || 200
 
   return (
-    <SafeAreaProvider style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Earnings Dashboard</Text>
           <Text style={styles.subtitle}>Track your performance and revenue</Text>
@@ -23,22 +90,26 @@ export default function EarningsScreen() {
               <Ionicons name="wallet" size={24} color={colors.primary} />
             </View>
             <Text style={styles.statLabel}>Total Revenue</Text>
-            <Text style={styles.statValue}>${totalEarnings}</Text>
+            <Text style={styles.statValue}>₹{totalEarnings}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: "#ECFDF5" }]}>
               <Ionicons name="checkmark-done" size={24} color={colors.success} />
             </View>
             <Text style={styles.statLabel}>Meetings</Text>
-            <Text style={styles.statValue}>{mockCompletedMeetings.length}</Text>
+            <Text style={styles.statValue}>{totalMeetings}</Text>
           </View>
         </View>
 
         {/* Filters */}
         <View style={styles.filterBar}>
-          {["10 Days", "1 Month", "1 Year"].map((filter, i) => (
-            <TouchableOpacity key={filter} style={[styles.filterBtn, i === 0 && styles.activeFilter]}>
-              <Text style={[styles.filterText, i === 0 && styles.activeFilterText]}>{filter}</Text>
+          {["All Time", "This Month", "This Week"].map((filter, i) => (
+            <TouchableOpacity 
+              key={filter} 
+              style={[styles.filterBtn, selectedFilter === i && styles.activeFilter]}
+              onPress={() => setSelectedFilter(i)}
+            >
+              <Text style={[styles.filterText, selectedFilter === i && styles.activeFilterText]}>{filter}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -47,10 +118,16 @@ export default function EarningsScreen() {
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Revenue Growth</Text>
           <View style={styles.mockChart}>
-            {/* Mock visual representation of a chart */}
-            {[40, 70, 45, 90, 65, 80, 50, 85].map((h, i) => (
-              <View key={i} style={[styles.chartBar, { height: h }]} />
-            ))}
+            {/* Mock visual representation of earnings */}
+            {meetings.length > 0 ? (
+              meetings.slice(0, 7).map((m: any, i: number) => (
+                <View key={i} style={[styles.chartBar, { height: 40 + (i * 10) }]} />
+              ))
+            ) : (
+              [40, 50, 45, 60, 55, 70, 65].map((h, i) => (
+                <View key={i} style={[styles.chartBar, { height: h }]} />
+              ))
+            )}
           </View>
           <View style={styles.chartLabels}>
             {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((l) => (
@@ -64,21 +141,36 @@ export default function EarningsScreen() {
         {/* Recent Transactions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Earnings</Text>
-          {mockCompletedMeetings.map((meeting) => (
-            <View key={meeting.id} style={styles.transactionCard}>
-              <View style={styles.transIcon}>
-                <Ionicons name="cash-outline" size={20} color={colors.success} />
+          {meetings.length > 0 ? (
+            meetings.slice(0, 10).map((meeting: any) => (
+              <View key={meeting.id} style={styles.transactionCard}>
+                <View style={styles.transIcon}>
+                  <Ionicons name="cash-outline" size={20} color={colors.success} />
+                </View>
+                <View style={styles.transDetails}>
+                  <Text style={styles.transLearner}>{meeting.userName}</Text>
+                  <Text style={styles.transDate}>
+                    {new Date(meeting.date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </Text>
+                </View>
+                <Text style={styles.transAmount}>+₹{meeting.revenue}</Text>
               </View>
-              <View style={styles.transDetails}>
-                <Text style={styles.transLearner}>{meeting.learnerName}</Text>
-                <Text style={styles.transDate}>{meeting.scheduledTime.split(" ")[0]}</Text>
-              </View>
-              <Text style={styles.transAmount}>+${meeting.earnings}</Text>
+            ))
+          ) : (
+            <View style={styles.emptySection}>
+              <Ionicons name="wallet-outline" size={48} color={colors.light.textTertiary} />
+              <Text style={styles.emptyText}>No earnings yet</Text>
+              <Text style={styles.emptySubtext}>Complete consultations to start earning</Text>
             </View>
-          ))}
+          )}
         </View>
       </ScrollView>
-    </SafeAreaProvider>
+      <Toast />
+    </SafeAreaView>
   )
 }
 
@@ -86,6 +178,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.light.textSecondary,
   },
   scrollContent: {
     paddingBottom: spacing.xxl,
@@ -236,5 +338,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: colors.success,
+  },
+  emptySection: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl * 2,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.light.text,
+    marginTop: spacing.md,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.light.textTertiary,
+    marginTop: spacing.xs,
   },
 })

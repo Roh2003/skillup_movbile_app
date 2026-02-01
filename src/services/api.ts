@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { API_BASE_URL } from '../../constants/config';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -11,16 +11,19 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+console.log("API Base URL:", API_BASE_URL);
+
 // Request interceptor - Add auth token
 api.interceptors.request.use(
   async (config) => {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
+      const token = await AsyncStorage.getItem('authToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
         console.log('✅ Token added to request:', config.url);
+        console.log('🔑 Token (first 20 chars):', token.substring(0, 20) + '...');
       } else {
-        console.log('⚠️ No token found for request:', config.url);
+        console.log('⚠️  NO TOKEN FOUND for request:', config.url);
       }
     } catch (error) {
       console.error('❌ Error getting auth token:', error);
@@ -44,23 +47,23 @@ api.interceptors.response.use(
       switch (status) {
         case 401:
           // Unauthorized - clear token and redirect to login
-          await SecureStore.deleteItemAsync('accessToken');
-          // You can emit an event here to trigger navigation to login
+          console.error('🔒 Unauthorized - clearing token');
           break;
         case 403:
-          console.error('Access forbidden');
+          console.error('⛔ Access forbidden - insufficient permissions');
+          console.error('Error details:', error.response.data);
           break;
         case 404:
-          console.error('Resource not found');
+          console.error('❌ Resource not found');
           break;
         case 500:
-          console.error('Server error');
+          console.error('💥 Server error');
           break;
         default:
           console.error('An error occurred:', error.response.data);
       }
     } else if (error.request) {
-      console.error('Network error - no response received');
+      console.error('📡 Network error - no response received');
     } else {
       console.error('Error:', error.message);
     }

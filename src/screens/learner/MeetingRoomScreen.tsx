@@ -137,7 +137,7 @@ export default function MeetingRoomScreen() {
 
               // Agora: engine.leaveChannel();
               
-              await consultationService.completeMeeting(meetingId);
+              await consultationService.endMeeting(meetingId);
               
               Toast.show({
                 type: "success",

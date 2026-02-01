@@ -48,8 +48,16 @@ export default function CourseDetailScreen() {
       
       // Handle different response structures
       const courseData = courseRes.data || courseRes;
-      const lessonsData = Array.isArray(lessonsRes.data) ? lessonsRes.data : 
+      
+      // Try to get lessons from the separate API first, then fall back to course data
+      let lessonsData = Array.isArray(lessonsRes.data) ? lessonsRes.data : 
                           Array.isArray(lessonsRes) ? lessonsRes : [];
+      
+      // If separate lessons API failed or returned empty, use lessons from course data
+      if (lessonsData.length === 0 && courseData.lessons && Array.isArray(courseData.lessons)) {
+        lessonsData = courseData.lessons;
+        console.log("Using lessons from course data:", lessonsData.length);
+      }
       
       console.log("Course data:", courseData);
       console.log("Lessons data:", lessonsData);
@@ -104,7 +112,13 @@ export default function CourseDetailScreen() {
     console.log("videoType:", lesson.videoType);
     console.log("videoId:", lesson.videoId);
     
-    // If we have a videoId, construct the YouTube URL
+    // If videoType is external, return the videoId as-is (it's the full URL)
+    if (lesson.videoType === 'external') {
+      console.log("✅ External video URL:", lesson.videoId);
+      return lesson.videoId;
+    }
+    
+    // For YouTube videos
     if (lesson.videoId) {
       // Check if videoId is already a full URL
       if (lesson.videoId.includes('youtube.com') || lesson.videoId.includes('youtu.be')) {
@@ -163,6 +177,8 @@ export default function CourseDetailScreen() {
       courseId: course.id,
       lessonTitle: lesson.title,
       videoUrl: videoUrl,
+      videoType: lesson.videoType,
+      videoId: lesson.videoId,
     });
   };
 

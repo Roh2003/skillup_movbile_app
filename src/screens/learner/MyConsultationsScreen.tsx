@@ -25,7 +25,9 @@ export default function MyConsultationsScreen() {
     try {
       setLoading(true)
       const response = await counselorService.getMyMeetings(activeTab)
+      console.log("response: ", response)
       setMeetings(response.data || [])
+      console.log("meetings: ", meetings)
     } catch (error: any) {
       console.error('Fetch meetings error:', error)
       Toast.show({
@@ -80,6 +82,7 @@ export default function MyConsultationsScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'PENDING_REQUEST': return '#FF9800' // Orange for pending requests
       case 'PENDING': return colors.accent
       case 'SCHEDULED': return colors.primary
       case 'ONGOING': return colors.success
@@ -91,6 +94,7 @@ export default function MyConsultationsScreen() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'PENDING_REQUEST': return 'hourglass-outline' // Waiting for acceptance
       case 'PENDING': return 'time-outline'
       case 'SCHEDULED': return 'calendar-outline'
       case 'ONGOING': return 'videocam'
@@ -101,6 +105,11 @@ export default function MyConsultationsScreen() {
   }
 
   const canJoin = (meeting: any) => {
+    // Pending requests cannot be joined (not accepted yet)
+    if (meeting.type === 'request' || meeting.status === 'PENDING_REQUEST') {
+      return false
+    }
+    
     if (meeting.status === 'COMPLETED' || meeting.status === 'CANCELLED') {
       return false
     }
@@ -146,12 +155,12 @@ export default function MyConsultationsScreen() {
         <View style={styles.detailRow}>
           <Ionicons name="document-text-outline" size={16} color={colors.light.textSecondary} />
           <Text style={styles.detailText}>
-            {item.consultationRequest.requestType}
+            {item.consultationRequest?.requestType || 'Consultation'}
           </Text>
         </View>
       </View>
 
-      {item.consultationRequest.message && (
+      {item.consultationRequest?.message && (
         <Text style={styles.messageText} numberOfLines={2}>
           {item.consultationRequest.message}
         </Text>
@@ -175,7 +184,8 @@ export default function MyConsultationsScreen() {
           styles.actionButtonText,
           !canJoin(item) && styles.actionButtonTextDisabled
         ]}>
-          {item.status === 'COMPLETED' ? 'View Summary' : 
+          {item.status === 'PENDING_REQUEST' ? 'Awaiting Approval' :
+           item.status === 'COMPLETED' ? 'View Summary' : 
            item.status === 'CANCELLED' ? 'Cancelled' :
            canJoin(item) ? 'Join Meeting' : 'Starts Soon'}
         </Text>

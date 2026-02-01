@@ -12,8 +12,9 @@ import counselorService from "@/services/counselor.service"
 import contestService from "@/services/contest.service"
 import Toast from "react-native-toast-message"
 
+
 export default function HomeScreen() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const navigation = useNavigation<any>()
   const insets = useSafeAreaInsets()
 
@@ -31,11 +32,12 @@ export default function HomeScreen() {
     try {
       setLoading(true)
       
-      // Fetch all data in parallel
+      // Fetch all data in parallel including user profile
       const [coursesRes, counselorsRes, contestsRes] = await Promise.all([
         courseService.getAllCourses().catch(() => ({ success: false, data: [] })),
         counselorService.getActiveCounselors().catch(() => ({ success: false, data: [] })),
         contestService.getAllContests().catch(() => ({ success: false, data: [] })),
+        refreshUser ? refreshUser().catch(() => {}) : Promise.resolve(),
       ])
 
       setCourses(coursesRes.data.slice(0, 6))
@@ -87,7 +89,11 @@ export default function HomeScreen() {
           style={styles.topBar}
         >
           <TouchableOpacity style={styles.profileCircle} onPress={() => navigation.navigate("Profile")}>
-            <Ionicons name="person-circle" size={45} color="#FFFFFF" style={styles.profileIcon} />
+            {user?.profileImage ? (
+              <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
+            ) : (
+              <Ionicons name="person-circle" size={45} color="#FFFFFF" style={styles.profileIcon} />
+            )}
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={styles.welcome}>Welcome back,</Text>

@@ -2,29 +2,37 @@
   "expo": {
     "name": "SkillUp",
     "slug": "skillup",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
-    "icon": "./public/skilluplogo.png",
+    "icon": "./public/SkillUplogo_zoomedOut.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./public/skilluplogo.png",
+      "image": "./public/SkillUplogo_zoomedOut.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.skillup.mobile"
+      "bundleIdentifier": "com.skillup.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SkillUp needs access to your camera for video consultations with counselors.",
+        "NSMicrophoneUsageDescription": "SkillUp needs access to your microphone for video consultations with counselors."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./public/skilluplogo.png",
+        "foregroundImage": "./public/SkillUplogo_zoomedOut.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.skillup.mobile.app"
+      "package": "com.skillup.mobile.app",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
-      "favicon": "./public/apple-icon.png"
+      "favicon": "./public/SkillUplogo_zoomedOut.png"
     },
     "extra": {
       "eas": {
@@ -32,7 +40,8 @@
       }
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-video"
     ]
   }
 }

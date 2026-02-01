@@ -29,7 +29,7 @@ export default function RoleSelectionScreen() {
           <View style={styles.iconContainer}>
             <Ionicons name="school" size={48} color="#FFFFFF" />
           </View>
-          <Text style={styles.heroTitle}>Welcome to SkillUp</Text>
+          <Text style={styles.heroTitle}>Welcome to SkillUp by rohit</Text>
           <Text style={styles.heroSubtitle}>
             Choose your role to continue
           </Text>

@@ -27,6 +27,7 @@ export default function CounsellorMeetingRoomScreen() {
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [connectionFailed, setConnectionFailed] = useState(false);
 
   const durationInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -34,41 +35,69 @@ export default function CounsellorMeetingRoomScreen() {
     initializeMeeting();
 
     return () => {
+      // Cleanup: Only clear interval, don't call handleEndCall
       if (durationInterval.current) {
         clearInterval(durationInterval.current);
       }
-      handleEndCall();
     };
   }, []);
 
   const initializeMeeting = async () => {
     try {
       setLoading(true);
-      const response = await consultationService.getMeetingDetails(meetingId);
+      console.log("🎥 [CounsellorMeetingRoom] Initializing meeting with ID:", meetingId);
+      
+      // Call joinMeeting API to:
+      // 1. Mark counselor as joined in database
+      // 2. Get Agora token and channel name
+      // 3. Check if both participants have joined
+      console.log("📝 [CounsellorMeetingRoom] Calling joinMeeting API...");
+      const response = await consultationService.joinMeeting(meetingId, 'counselor');
+      console.log("📦 [CounsellorMeetingRoom] Join meeting response:", response);
 
-      if (response.success) {
-        const { agoraToken, channelName } = response.data;
+      if (response.success || response.data) {
+        const joinData = response.data || response;
         
-        // Initialize Agora SDK here
-        setConnected(true);
-        startDurationTimer();
+        if (!joinData.canJoin) {
+          throw new Error(joinData.message || "Cannot join meeting at this time");
+        }
+
+        const { token, channelName, appId, meetingStatus, waitingFor } = joinData;
         
-        Toast.show({
-          type: "success",
-          text1: "Connected",
-          text2: "Video call connected successfully",
+        console.log("✅ [CounsellorMeetingRoom] Got Agora credentials");
+        console.log("  - Channel:", channelName);
+        console.log("  - Token (first 20 chars):", token?.substring(0, 20));
+        console.log("  - Meeting Status:", meetingStatus);
+        console.log("  - Waiting For:", waitingFor);
+        
+        // Navigate to unified video call screen
+        navigation.replace("UnifiedVideoCall", {
+          meetingId,
+          token,
+          appId,
+          channelName,
+          userType: 'counselor',
+          participantName: learnerName || 'Learner'
         });
       } else {
-        throw new Error(response.message || "Failed to get meeting details");
+        throw new Error(response.message || "Failed to join meeting");
       }
     } catch (error: any) {
-      console.error("Initialize meeting error:", error);
+      console.error("❌ [CounsellorMeetingRoom] Initialize meeting error:", error);
+      console.error("Error details:", error.response?.data);
+      
+      setConnectionFailed(true);
+      
       Toast.show({
         type: "error",
         text1: "Connection Failed",
-        text2: error.response?.data?.message || "Failed to connect to meeting",
+        text2: error.response?.data?.message || error.message || "Failed to connect to meeting",
       });
-      navigation.goBack();
+      
+      // Wait a bit before navigating back to show the error toast
+      setTimeout(() => {
+        navigation.goBack();
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -109,7 +138,12 @@ export default function CounsellorMeetingRoomScreen() {
     });
   };
 
-  const handleEndCall = async () => {
+  const handleEndCall = () => {
+    // Don't show alert if connection failed
+    if (connectionFailed) {
+      return;
+    }
+
     Alert.alert(
       "End Call",
       "Are you sure you want to end this consultation?",
@@ -124,7 +158,7 @@ export default function CounsellorMeetingRoomScreen() {
                 clearInterval(durationInterval.current);
               }
 
-              await consultationService.completeMeeting(meetingId);
+              await consultationService.endMeeting(meetingId);
               
               Toast.show({
                 type: "success",

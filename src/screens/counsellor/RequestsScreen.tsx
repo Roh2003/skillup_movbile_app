@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaProvider, Alert, ActivityIndicator, RefreshControl } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl, Switch, Image } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { Ionicons } from "@expo/vector-icons"
 import { useAuth } from "../../../context/AuthContext"
 import { useNavigation } from "@react-navigation/native"
 import consultationService from "@/services/consultation.service"
 import Toast from "react-native-toast-message"
+import { SafeAreaView } from "react-native-safe-area-context"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export default function RequestsScreen() {
   const { user } = useAuth()
@@ -13,26 +15,62 @@ export default function RequestsScreen() {
 
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [data, setData] = useState({})
   const [refreshing, setRefreshing] = useState(false)
+  const [isOnline, setIsOnline] = useState(false)
+  const [togglingStatus, setTogglingStatus] = useState(false)
+  const [profileImage, setProfileImage] = useState<string | null>(null)
 
   useEffect(() => {
     fetchRequests()
+    fetchProfile()
+    // clearAllAsyncStorage()
   }, [])
+
+  const clearAllAsyncStorage = async () => {
+  try {
+    await AsyncStorage.clear();
+    console.log('✅ AsyncStorage completely cleared');
+  } catch (error) {
+    console.error('❌ Failed to clear AsyncStorage', error);
+  }
+};
+
+const logAllAsyncStorage = async () => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const data = await AsyncStorage.multiGet(keys);
+
+    console.log('🔐 AsyncStorage FULL DATA ↓↓↓');
+    data.forEach(([key, value]) => {
+      console.log(`${key} =>`, value);
+    });
+  } catch (error) {
+    console.error('Error reading AsyncStorage', error);
+  }
+};
+
+  const fetchProfile = async () => {
+    try {
+      console.log("fetch profile calling")
+      const response = await consultationService.getCounselorProfile()
+      console.log("response", response)
+      setData(response.data)
+        setIsOnline(response.data.isActive)
+        setProfileImage(response.data.profileImage)
+      
+    } catch (error) {
+      console.error('Fetch profile error:', error)
+    }
+  }
 
   const fetchRequests = async () => {
     try {
+      logAllAsyncStorage()
       setLoading(true)
       const response = await consultationService.getCounselorRequests()
+      setRequests(response.requests)
 
-      if (response.success) {
-        setRequests(response.data)
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: response.message || 'Failed to fetch requests'
-        })
-      }
     } catch (error: any) {
       console.error('Fetch requests error:', error)
       Toast.show({
@@ -51,10 +89,42 @@ export default function RequestsScreen() {
     fetchRequests()
   }
 
-  const handleAccept = async (requestId: number, learnerName: string) => {
+  const toggleOnlineStatus = async () => {
+    try {
+      setTogglingStatus(true)
+      const newStatus = !isOnline
+      const response = await consultationService.toggleAvailability(newStatus)
+
+
+        setIsOnline(response.data.isActive)
+        Toast.show({
+          type: 'success',
+          text1: newStatus ? 'You are now Online' : 'You are now Offline',
+          text2: newStatus ? 'You can receive consultation requests' : 'You won\'t receive new requests'
+        })
+
+    } catch (error: any) {
+      console.error('Toggle status error:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update status'
+      })
+    } finally {
+      setTogglingStatus(false)
+    }
+  }
+
+  const handleAccept = async (requestId: number, learnerName: string, requestType: string, scheduledAt?: string) => {
+    const isScheduled = requestType === 'SCHEDULED'
+    const alertTitle = isScheduled ? "Accept Scheduled Meeting?" : "Accept Request"
+    const alertMessage = isScheduled 
+      ? `Accept meeting with ${learnerName} scheduled for ${scheduledAt ? new Date(scheduledAt).toLocaleString() : 'later'}?`
+      : `Accept instant meeting request from ${learnerName}?`
+
     Alert.alert(
-      "Accept Request",
-      `Accept meeting request from ${learnerName}?`,
+      alertTitle,
+      alertMessage,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -63,7 +133,15 @@ export default function RequestsScreen() {
             try {
               const response = await consultationService.acceptRequest(requestId)
 
-              if (response.success) {
+              if (isScheduled) {
+                // For scheduled meetings, just show confirmation - don't navigate to meeting room yet
+                Toast.show({
+                  type: 'success',
+                  text1: 'Scheduled Meeting Accepted',
+                  text2: `Meeting scheduled for ${scheduledAt ? new Date(scheduledAt).toLocaleDateString() : 'later'}. Join from Schedule tab when time comes.`
+                })
+              } else {
+                // For instant meetings, navigate immediately
                 Toast.show({
                   type: 'success',
                   text1: 'Request Accepted',
@@ -75,16 +153,10 @@ export default function RequestsScreen() {
                   meetingId: response.data.meetingId,
                   learnerName: learnerName,
                 })
+              }
 
                 // Refresh list
                 fetchRequests()
-              } else {
-                Toast.show({
-                  type: 'error',
-                  text1: 'Error',
-                  text2: response.message || 'Failed to accept request'
-                })
-              }
             } catch (error: any) {
               console.error('Accept request error:', error)
               Toast.show({
@@ -111,20 +183,11 @@ export default function RequestsScreen() {
           onPress: async () => {
             try {
               const response = await consultationService.rejectRequest(requestId)
-
-              if (response.success) {
                 Toast.show({
                   type: 'success',
                   text1: 'Request Rejected'
                 })
                 fetchRequests()
-              } else {
-                Toast.show({
-                  type: 'error',
-                  text1: 'Error',
-                  text2: response.message || 'Failed to reject request'
-                })
-              }
             } catch (error: any) {
               console.error('Reject request error:', error)
               Toast.show({
@@ -139,88 +202,125 @@ export default function RequestsScreen() {
     )
   }
 
-  const renderRequest = ({ item }: any) => (
-    <View style={styles.requestCard}>
-      <View style={styles.requestHeader}>
-        <View style={styles.learnerInfo}>
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={24} color={colors.primary} />
+  const renderRequest = ({ item }: any) => {
+    const userName = item.user?.firstName 
+      ? `${item.user.firstName} ${item.user.lastName || ''}`.trim()
+      : item.user?.email || 'Learner'
+    
+    return (
+      <View style={styles.requestCard}>
+        <View style={styles.requestHeader}>
+          <View style={styles.learnerInfo}>
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={24} color={colors.primary} />
+            </View>
+            <View>
+              <Text style={styles.learnerName}>
+                {userName}
+              </Text>
+              <Text style={styles.requestedAt}>
+                {new Date(item.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.learnerName}>
-              {item.user?.username || item.user?.name || 'Learner'}
-            </Text>
-            <Text style={styles.requestedAt}>
-              {new Date(item.createdAt).toLocaleDateString()}
+          <View style={[styles.typeBadge, item.requestType === 'INSTANT' && styles.instantBadge]}>
+            <Ionicons 
+              name={item.requestType === 'INSTANT' ? 'flash' : 'calendar'} 
+              size={14} 
+              color={item.requestType === 'INSTANT' ? colors.accent : colors.primary} 
+            />
+            <Text style={[styles.typeText, item.requestType === 'INSTANT' && styles.instantText]}>
+              {item.requestType}
             </Text>
           </View>
         </View>
-        <View style={[styles.typeBadge, item.requestType === 'INSTANT' && styles.instantBadge]}>
-          <Ionicons 
-            name={item.requestType === 'INSTANT' ? 'flash' : 'calendar'} 
-            size={14} 
-            color={item.requestType === 'INSTANT' ? colors.accent : colors.primary} 
-          />
-          <Text style={[styles.typeText, item.requestType === 'INSTANT' && styles.instantText]}>
-            {item.requestType}
-          </Text>
+
+        {item.scheduledAt && (
+          <View style={styles.scheduledTime}>
+            <Ionicons name="time-outline" size={16} color={colors.primary} />
+            <Text style={styles.scheduledTimeText}>
+              {new Date(item.scheduledAt).toLocaleString()}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.messageBox}>
+          <Text style={styles.messageLabel}>Message:</Text>
+          <Text style={styles.messageText}>{item.message || 'No message provided'}</Text>
+        </View>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={[styles.btn, styles.rejectBtn]}
+            onPress={() => handleReject(item.id, userName)}
+          >
+            <Text style={styles.rejectBtnText}>Reject</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.btn, styles.acceptBtn]}
+            onPress={() => handleAccept(item.id, userName, item.requestType, item.scheduledAt)}
+          >
+            <Text style={styles.acceptBtnText}>Accept Request</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {item.scheduledAt && (
-        <View style={styles.scheduledTime}>
-          <Ionicons name="time-outline" size={16} color={colors.primary} />
-          <Text style={styles.scheduledTimeText}>
-            {new Date(item.scheduledAt).toLocaleString()}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.messageBox}>
-        <Text style={styles.messageLabel}>Message:</Text>
-        <Text style={styles.messageText}>{item.message || 'No message provided'}</Text>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.btn, styles.rejectBtn]}
-          onPress={() => handleReject(item.id, item.user?.username || 'Learner')}
-        >
-          <Text style={styles.rejectBtnText}>Reject</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.btn, styles.acceptBtn]}
-          onPress={() => handleAccept(item.id, item.user?.username || 'Learner')}
-        >
-          <Text style={styles.acceptBtnText}>Accept Request</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
+    )
+  }
 
   if (loading) {
     return (
-      <SafeAreaProvider style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading requests...</Text>
         </View>
-      </SafeAreaProvider>
+      </SafeAreaView>
     )
   }
 
+  console.log("data", data)
+
   return (
-    <SafeAreaProvider style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <View>
           <Text style={styles.greeting}>Welcome Back,</Text>
-          <Text style={styles.userName}>{user?.name || user?.username || 'Counselor'}</Text>
+          <Text style={styles.userName}>{data?.name || 'Counselor'}</Text>
         </View>
         <View style={styles.topBarActions}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Profile")}>
-            <Ionicons name="person-circle-outline" size={32} color={colors.light.text} />
+          <TouchableOpacity style={styles.profileButton} onPress={() => navigation.navigate("Profile")}>
+            {profileImage ? (
+              <Image 
+                source={{ uri: profileImage }} 
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profilePlaceholder}>
+                <Ionicons name="person" size={24} color={colors.primary} />
+              </View>
+            )}
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Online/Offline Toggle */}
+      <View style={styles.statusCard}>
+        <View style={styles.statusLeft}>
+          <View style={[styles.statusDot, isOnline && styles.statusDotOnline]} />
+          <View>
+            <Text style={styles.statusLabel}>Availability Status</Text>
+            <Text style={[styles.statusValue, isOnline && styles.statusValueOnline]}>
+              {isOnline ? 'Online' : 'Offline'}
+            </Text>
+          </View>
+        </View>
+        <Switch
+          value={isOnline}
+          onValueChange={toggleOnlineStatus}
+          disabled={togglingStatus}
+          trackColor={{ false: colors.light.border, true: colors.success }}
+          thumbColor={isOnline ? '#FFFFFF' : '#f4f3f4'}
+        />
       </View>
 
       <View style={styles.header}>
@@ -251,7 +351,7 @@ export default function RequestsScreen() {
         }
       />
       <Toast />
-    </SafeAreaProvider>
+    </SafeAreaView>
   )
 }
 
@@ -289,8 +389,64 @@ const styles = StyleSheet.create({
   topBarActions: {
     flexDirection: "row",
   },
-  iconButton: {
+  profileButton: {
     padding: spacing.xs,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  profilePlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0E7FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  statusCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.light.surface,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  statusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.error,
+  },
+  statusDotOnline: {
+    backgroundColor: colors.success,
+  },
+  statusLabel: {
+    fontSize: 12,
+    color: colors.light.textSecondary,
+  },
+  statusValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.error,
+  },
+  statusValueOnline: {
+    color: colors.success,
   },
   header: {
     paddingHorizontal: spacing.lg,

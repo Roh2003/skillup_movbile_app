@@ -29,55 +29,80 @@ export default function WaitingRoomScreen() {
 
     const joinAndPollMeeting = async () => {
         try {
+            console.log("🚪 [WaitingRoom] Attempting to join meeting:", meetingId);
+            console.log("📝 [WaitingRoom] Calling counselorService.joinMeeting with userType: user");
+            
             // Call join meeting API
             const response = await counselorService.joinMeeting(meetingId)
+            
+            console.log("📦 [WaitingRoom] Join meeting response:", JSON.stringify(response, null, 2));
 
-            if (response.data.canJoin) {
+            if (response.data && response.data.canJoin) {
+                console.log("✅ [WaitingRoom] Can join meeting");
                 setAgoraCredentials(response.data)
 
                 // Check if both joined
                 if (response.data.meetingStatus === 'ONGOING') {
+                    console.log("🎥 [WaitingRoom] Meeting is ONGOING - starting video call");
                     // Both participants ready, start video call
-                    navigation.replace('VideoCall', {
+                    navigation.replace('UnifiedVideoCall', {
                         meetingId,
                         token: response.data.token,
                         appId: response.data.appId,
                         channelName: response.data.channelName,
+                        userType: 'user',
+                        participantName: 'Counselor'
                     })
                 } else {
+                    console.log("⏳ [WaitingRoom] Waiting for other participant");
                     // Waiting for other participant
                     setMeeting({ status: 'WAITING', waitingFor: response.data.waitingFor })
 
                     // Start polling for meeting status
+                    console.log("🔄 [WaitingRoom] Starting polling...");
                     pollInterval.current = setInterval(async () => {
                         try {
                             const pollResponse = await counselorService.getMeetingById(meetingId)
                             const meetingData = pollResponse.data
 
+                            console.log("📊 [WaitingRoom] Poll response:", {
+                                counselorJoined: meetingData.counselorJoined,
+                                userJoined: meetingData.userJoined
+                            });
+
                             // Check if both have joined
                             if (meetingData.counselorJoined && meetingData.userJoined) {
+                                console.log("✅ [WaitingRoom] Both joined! Starting video call");
                                 clearInterval(pollInterval.current)
 
                                 // Navigate to video call
-                                navigation.replace('VideoCall', {
+                                navigation.replace('UnifiedVideoCall', {
                                     meetingId,
                                     token: response.data.token,
                                     appId: response.data.appId,
                                     channelName: response.data.channelName,
+                                    userType: 'user',
+                                    participantName: 'Counselor'
                                 })
                             }
                         } catch (pollError) {
-                            console.error('Poll error:', pollError)
+                            console.error('❌ [WaitingRoom] Poll error:', pollError)
                         }
                     }, 3000) // Poll every 3 seconds
                 }
+            } else {
+                console.warn("⚠️ [WaitingRoom] Cannot join meeting - response:", response);
             }
         } catch (error: any) {
-            console.error('Join meeting error:', error)
+            console.error('❌ [WaitingRoom] Join meeting error:', error);
+            console.error('Error response:', error.response?.data);
+            console.error('Error status:', error.response?.status);
+            console.error('Error message:', error.message);
 
             if (error.response?.data?.data) {
                 // Time validation error
                 const { waitTime, scheduledTime } = error.response.data.data
+                console.log("⏰ [WaitingRoom] Time validation error - too early");
                 Toast.show({
                     type: 'info',
                     text1: 'Too Early',
@@ -85,10 +110,11 @@ export default function WaitingRoomScreen() {
                 })
                 setTimeout(() => navigation.goBack(), 2000)
             } else {
+                console.log("🚨 [WaitingRoom] General error - showing error toast");
                 Toast.show({
                     type: 'error',
                     text1: 'Error',
-                    text2: error.response?.data?.message || 'Failed to join meeting'
+                    text2: error.response?.data?.message || error.message || 'Failed to join meeting'
                 })
                 setTimeout(() => navigation.goBack(), 2000)
             }

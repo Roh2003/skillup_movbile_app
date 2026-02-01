@@ -13,15 +13,16 @@ import {
 } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
-import { useAuth } from "../../../context/AuthContext"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
 import Toast from "react-native-toast-message"
+import authService from "@/services/auth.service"
+import { useAuth } from "../../../context/AuthContext"
 
 export default function LearnerLoginScreen() {
   const navigation = useNavigation<any>()
-  const { login , user } = useAuth()
+  const { refreshUser } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -35,20 +36,26 @@ export default function LearnerLoginScreen() {
     }
     setLoading(true)
     try {
-      console.log("api is hiiting")
-      await login(email, password)
-      Toast.show({
-        type: "success",
-        text1: "Login successful 🎉",
-        text2: "Welcome back to SkillUp",
-      })
+      console.log("🔐 Starting login process...")
+      const response = await authService.learnerLogin({ email, password })
       navigation.navigate("LearnerMain")
-      
-    } catch {
+
+        Toast.show({
+          type: "success",
+          text1: "Login successful 🎉",
+          text2: "Welcome back to SkillUp",
+        })
+        
+        // Refresh user state in AuthContext to trigger navigation
+        if (refreshUser) {
+          await refreshUser()
+        }
+    } catch (error: any) {
+      console.error("Login error:", error)
       Toast.show({
         type: "error",
         text1: "Login failed",
-        text2: "Invalid email or password",
+        text2: error.response?.data?.message || "Invalid email or password",
       })
     } finally {
       setLoading(false)

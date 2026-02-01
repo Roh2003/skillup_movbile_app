@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { Ionicons } from "@expo/vector-icons"
 import { colors } from "@/theme/colors"
+import { useAuth } from "../../context/AuthContext"
 import type { RootStackParamList, LearnerTabParamList, CounsellorTabParamList } from "../../types/navigation"
 
 // Auth / onboarding
@@ -50,6 +51,7 @@ import MyConsultationsScreen from "@/screens/learner/MyConsultationsScreen"
 import WaitingRoomScreen from "@/screens/learner/WaitingRoomScreen"
 import VideoCallScreen from "@/screens/learner/VideoCallScreen"
 import MeetingSummaryScreen from "@/screens/learner/MeetingSummaryScreen"
+import UnifiedVideoCallScreen from "@/screens/shared/UnifiedVideoCallScreen"
 
 
 const RootStack = createNativeStackNavigator<RootStackParamList>()
@@ -155,6 +157,8 @@ function CounsellorTabNavigator() {
 }
 
 export default function RootNavigator() {
+  const { user } = useAuth()
+
   return (
     <RootStack.Navigator
       initialRouteName="Splash"
@@ -162,17 +166,25 @@ export default function RootNavigator() {
         headerShown: false,
       }}
     >
+      {/* Always show Splash first - it handles navigation logic */}
       <RootStack.Screen name="Splash" component={SplashScreen} />
+      
+      {/* Onboarding flow */}
       <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
       <RootStack.Screen name="Welcome" component={WelcomeScreen} />
       <RootStack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+      
+      {/* Auth screens */}
       <RootStack.Screen name="LearnerLogin" component={LearnerLoginScreen} />
       <RootStack.Screen name="LearnerRegister" component={LearnerRegisterScreen} />
       <RootStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <RootStack.Screen name="CounsellorLogin" component={CounsellorLoginScreen} />
+      
+      {/* Main app tabs */}
       <RootStack.Screen name="LearnerMain" component={LearnerTabNavigator} />
       <RootStack.Screen name="CounsellorMain" component={CounsellorTabNavigator} />
-      {/* Extra learner stack screens */}
+      
+      {/* Extra screens accessible from main app */}
       <RootStack.Screen name="CourseDetail" component={CourseDetailScreen} />
       <RootStack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
       <RootStack.Screen name="Profile" component={ProfileScreen} />
@@ -185,6 +197,7 @@ export default function RootNavigator() {
       <RootStack.Screen name="MyConsultations" component={MyConsultationsScreen} />
       <RootStack.Screen name="WaitingRoom" component={WaitingRoomScreen} />
       <RootStack.Screen name="VideoCall" component={VideoCallScreen} />
+      <RootStack.Screen name="UnifiedVideoCall" component={UnifiedVideoCallScreen} />
       <RootStack.Screen name="MeetingSummary" component={MeetingSummaryScreen} />
       <RootStack.Screen name="CounsellorDashboard" component={CounsellorTabNavigator} />
       <RootStack.Screen name="Settings" component={SettingsScreen} />

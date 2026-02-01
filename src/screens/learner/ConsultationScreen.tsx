@@ -27,6 +27,7 @@ export default function ConsultationScreen() {
       
 
       setCounselors(response.data)
+      console.log("counselors",response.data)
 
     } catch (error: any) {
       console.error('Fetch counselors error:', error)
@@ -50,6 +51,8 @@ export default function ConsultationScreen() {
     c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.specialization?.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  console.log("filteredCounselors",filteredCounselors)
 
   const handleVideoCall = (counselor: any) => {
     if (!counselor.isActive) {
@@ -147,8 +150,19 @@ export default function ConsultationScreen() {
   return (
     <SafeAreaProvider style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Consult Experts</Text>
-        <Text style={styles.subtitle}>Get professional guidance for your career</Text>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Consult Experts</Text>
+            <Text style={styles.subtitle}>Get professional guidance for your career</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.myMeetingsButton}
+            onPress={() => navigation.navigate("MyConsultations")}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            <Text style={styles.myMeetingsText}>My Meetings</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={colors.light.textTertiary} />
@@ -204,6 +218,28 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: spacing.lg,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  myMeetingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: `${colors.primary}40`,
+  },
+  myMeetingsText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: colors.primary,
   },
   title: {
     fontSize: 28,

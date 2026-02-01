@@ -30,6 +30,7 @@ export type RootStackParamList = {
   MyConsultations: undefined
   WaitingRoom: { meetingId: string }
   VideoCall: { meetingId: string; channelName: string; token: string }
+  UnifiedVideoCall: { meetingId: string; token: string; appId: string; channelName: string; userType: 'user' | 'counselor'; participantName?: string }
   MeetingSummary: { meetingId: string }
 }
 

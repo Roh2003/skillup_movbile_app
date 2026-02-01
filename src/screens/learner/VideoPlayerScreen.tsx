@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import YoutubePlayer from "react-native-youtube-iframe";
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { colors, spacing, borderRadius } from "@/theme/colors";
 import Toast from "react-native-toast-message";
 
@@ -12,10 +13,29 @@ const { width, height } = Dimensions.get("window");
 export default function VideoPlayerScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { lessonId, courseId, lessonTitle, videoUrl } = route.params;
+  const { lessonId, courseId, lessonTitle, videoUrl, videoType: passedVideoType, videoId: passedVideoId } = route.params;
 
   const [playing, setPlaying] = useState(false);
   const [completed, setCompleted] = useState(false);
+
+  // Determine if this is an external video or YouTube video
+  const isExternalVideo = passedVideoType === "external" || 
+                          (videoUrl && !videoUrl.includes('youtube.com') && !videoUrl.includes('youtu.be'));
+  
+  console.log("🎥 Video Player Info:");
+  console.log("- videoType:", passedVideoType);
+  console.log("- videoUrl:", videoUrl);
+  console.log("- videoId:", passedVideoId);
+  console.log("- isExternalVideo:", isExternalVideo);
+
+  // Get the video source URL
+  const externalVideoUrl = isExternalVideo ? (passedVideoId || videoUrl) : null;
+
+  // Initialize video player for external videos using the new expo-video API
+  const player = useVideoPlayer(externalVideoUrl || '', (player) => {
+    player.loop = false;
+    player.play();
+  });
 
   // Extract YouTube video ID from URL
   const getYouTubeVideoId = (url: string) => {
@@ -25,7 +45,7 @@ export default function VideoPlayerScreen() {
     }
     
     // Handle different YouTube URL formats
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\\??v?=?([^#&?]*).*/;
     const match = url.match(regExp);
     
     console.log("RegExp match:", match);
@@ -39,7 +59,7 @@ export default function VideoPlayerScreen() {
     return null;
   };
 
-  const videoId = getYouTubeVideoId(videoUrl);
+  const youtubeVideoId = !isExternalVideo ? getYouTubeVideoId(videoUrl) : null;
 
   const onStateChange = useCallback((state: string) => {
     if (state === "ended") {
@@ -54,7 +74,6 @@ export default function VideoPlayerScreen() {
   }, []);
 
   const handleNextLesson = () => {
-    // Navigate to next lesson (you'll need to pass next lesson data)
     Toast.show({
       type: "info",
       text1: "Next Lesson",
@@ -72,6 +91,52 @@ export default function VideoPlayerScreen() {
     navigation.goBack();
   };
 
+  const renderVideoPlayer = () => {
+    if (isExternalVideo && externalVideoUrl) {
+      // Render expo-video VideoView for external MP4 videos
+      return (
+        <View style={styles.playerContainer}>
+          <VideoView
+            style={styles.video}
+            player={player}
+            fullscreenOptions={{
+              enable: true, 
+            }}
+            allowsPictureInPicture
+            nativeControls
+          />
+        </View>
+      );
+    } else if (youtubeVideoId) {
+      // Render YouTube player
+      return (
+        <View style={styles.playerContainer}>
+          <YoutubePlayer
+            height={width * 0.5625} // 16:9 aspect ratio
+            width={width}
+            play={playing}
+            videoId={youtubeVideoId}
+            onChangeState={onStateChange}
+            webViewStyle={styles.webView}
+          />
+        </View>
+      );
+    } else {
+      // No valid video
+      return (
+        <View style={styles.playerContainer}>
+          <View style={styles.noVideoContainer}>
+            <Ionicons name="videocam-off-outline" size={64} color={colors.light.textTertiary} />
+            <Text style={styles.noVideoText}>No video available</Text>
+            <Text style={styles.noVideoSubtext}>
+              {videoUrl ? "Invalid video URL" : "Video URL not provided"}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
@@ -86,7 +151,9 @@ export default function VideoPlayerScreen() {
           <Text style={styles.headerTitle} numberOfLines={1}>
             {lessonTitle || "Video Lesson"}
           </Text>
-          <Text style={styles.headerSubtitle}>Course Lesson</Text>
+          <Text style={styles.headerSubtitle}>
+            {isExternalVideo ? "External Video" : "Course Lesson"}
+          </Text>
         </View>
         <TouchableOpacity style={styles.moreButton}>
           <Ionicons name="ellipsis-vertical" size={24} color={colors.light.text} />
@@ -95,51 +162,7 @@ export default function VideoPlayerScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Video Player */}
-        
-        <View style={styles.playerContainer}>
-          {videoId ? (
-              <YoutubePlayer
-                height={width * 0.5625} // 16:9 aspect ratio
-                width={width}
-                play={playing}
-                videoId={videoId}
-                onChangeState={onStateChange}
-                webViewStyle={styles.webView}
-              />
-          ) : (
-            <View style={styles.noVideoContainer}>
-              <Ionicons name="videocam-off-outline" size={64} color={colors.light.textTertiary} />
-              <Text style={styles.noVideoText}>No video available</Text>
-              <Text style={styles.noVideoSubtext}>
-                {videoUrl ? "Invalid YouTube URL" : "Video URL not provided"}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Playback Controls */}
-        {/* {videoId && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={() => setPlaying(!playing)}
-            >
-              <Ionicons
-                name={playing ? "pause" : "play"}
-                size={32}
-                color={colors.primary}
-              />
-              <Text style={styles.controlText}>{playing ? "Pause" : "Play"}</Text>
-            </TouchableOpacity>
-
-            {completed && (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                <Text style={styles.completedText}>Completed</Text>
-              </View>
-            )}
-          </View>
-        )} */}
+        {renderVideoPlayer()}
 
         {/* Lesson Info */}
         <View style={styles.lessonInfo}>
@@ -147,7 +170,9 @@ export default function VideoPlayerScreen() {
           <View style={styles.lessonMeta}>
             <View style={styles.metaItem}>
               <Ionicons name="play-circle-outline" size={16} color={colors.primary} />
-              <Text style={styles.metaText}>Video Lesson</Text>
+              <Text style={styles.metaText}>
+                {isExternalVideo ? "External Video" : "YouTube Video"}
+              </Text>
             </View>
             {completed && (
               <View style={styles.metaItem}>
@@ -230,6 +255,11 @@ const styles = StyleSheet.create({
     width: width,
     height: width * 0.5625,
     backgroundColor: "#000",
+    position: 'relative',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
   },
   webView: {
     backgroundColor: "#000",
@@ -250,39 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.light.textSecondary,
     marginTop: spacing.xs,
-  },
-  controls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.lg,
-    backgroundColor: colors.light.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
-  },
-  controlButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  controlText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  completedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    backgroundColor: `${colors.success}15`,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  completedText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.success,
   },
   lessonInfo: {
     padding: spacing.lg,
