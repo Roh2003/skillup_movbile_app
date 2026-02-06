@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUserFromStorage = async () => {
     try {
       console.log("📱 [AuthContext] Loading user from storage...")
+      console.log("all data in asyncstorage",AsyncStorage.getAllKeys())
       const userData = await AsyncStorage.getItem('userData')
       const authToken = await AsyncStorage.getItem('authToken')
       

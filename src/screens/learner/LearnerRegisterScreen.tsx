@@ -18,6 +18,7 @@ import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
 import Toast from "react-native-toast-message"
 import authService from "@/services/auth.service"
+import { useGoogleAuth } from '@/services/googleAuth.service';
 
 export default function LearnerRegisterScreen() {
   const navigation = useNavigation<any>()
@@ -84,6 +85,73 @@ export default function LearnerRegisterScreen() {
       setLoading(false)
     }
   }
+
+  const { request, response, promptAsync } = useGoogleAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignUp = async () => {
+    try {
+      setGoogleLoading(true);
+      const result = await promptAsync();
+      
+      console.log("🔐 Google auth result:", result);
+      
+      if (result?.type === 'success' && result.authentication?.accessToken) {
+        // Fetch user info from Google using the access token
+        const userInfoResponse = await fetch(
+          'https://www.googleapis.com/userinfo/v2/me',
+          {
+            headers: { Authorization: `Bearer ${result.authentication.accessToken}` },
+          }
+        );
+        
+        const googleUser = await userInfoResponse.json();
+        console.log("👤 Google user info:", googleUser);
+        
+        // Call backend API to register/login with Google
+        const response = await authService.googleLogin({
+          idToken: result.authentication.idToken || '',
+          email: googleUser.email,
+          firstName: googleUser.given_name || googleUser.name?.split(' ')[0] || '',
+          lastName: googleUser.family_name || googleUser.name?.split(' ')[1] || '',
+          googleId: googleUser.id,
+          profileImage: googleUser.picture,
+        });
+        
+        if (response.success) {
+          Toast.show({
+            type: "success",
+            text1: "Google Sign-Up successful 🎉",
+            text2: "Welcome to SkillUp!",
+          });
+          navigation.navigate("LearnerMain");
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Sign-Up failed",
+            text2: response.message || "Something went wrong",
+          });
+        }
+      } else if (result?.type === 'cancel') {
+        console.log("🚫 User cancelled Google sign-in");
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Google Sign-Up failed",
+          text2: "Could not authenticate with Google",
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Google sign-up error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Google Sign-Up failed",
+        text2: error.message || "Something went wrong",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -248,9 +316,19 @@ export default function LearnerRegisterScreen() {
                 <Text style={styles.socialButtonText}>Sign Up with Facebook</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-google" size={20} color="#4285F4" />
-                <Text style={styles.socialButtonText}>Sign Up with Google</Text>
+              <TouchableOpacity 
+                style={[styles.socialButton, (googleLoading || !request) && { opacity: 0.7 }]}
+                onPress={handleGoogleSignUp}
+                disabled={!request || googleLoading}
+              >
+                {googleLoading ? (
+                  <ActivityIndicator size="small" color="#4285F4" />
+                ) : (
+                  <Ionicons name="logo-google" size={20} color="#4285F4" />
+                )}
+                <Text style={styles.socialButtonText}>
+                  {googleLoading ? "Signing up..." : "Sign Up with Google"}
+                </Text>
               </TouchableOpacity>
 
               {/* Footer */}

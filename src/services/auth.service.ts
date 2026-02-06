@@ -129,6 +129,23 @@ const authService = {
     
     return response.data;
   },
+
+  async googleLogin(googleUser: {
+    idToken: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    googleId: string;
+    profileImage?: string;
+  }) {
+    const response = await api.post('/user/auth/google', googleUser);
+    if (response.data?.data?.authToken) {
+      await AsyncStorage.setItem('authToken', response.data.data.authToken);
+      await AsyncStorage.setItem('userType', 'learner');
+      await AsyncStorage.setItem('userData', JSON.stringify(response.data.data.user));
+    }
+    return response.data;
+  }
 };
 
 export default authService;
