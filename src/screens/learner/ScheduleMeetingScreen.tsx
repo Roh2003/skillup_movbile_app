@@ -7,7 +7,7 @@ import { useNavigation, useRoute } from "@react-navigation/native"
 import { useState } from "react"
 import DateTimePicker from '@react-native-community/datetimepicker'
 import counselorService from "@/services/counselor.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 export default function ScheduleMeetingScreen() {
   const navigation = useNavigation<any>()
@@ -47,7 +47,7 @@ export default function ScheduleMeetingScreen() {
 
     // Validate future date
     if (scheduledDateTime <= new Date()) {
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Invalid Time',
         text2: 'Please select a future date and time'
@@ -64,7 +64,7 @@ export default function ScheduleMeetingScreen() {
         message: message || 'Scheduled consultation request'
       })
 
-      Toast.show({
+      CustomToast.show({
         type: 'success',
         text1: 'Request Sent',
         text2: 'Your meeting request has been sent to the counselor'
@@ -74,7 +74,7 @@ export default function ScheduleMeetingScreen() {
       navigation.navigate('MyConsultations')
     } catch (error: any) {
       console.error('Schedule error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to schedule meeting'
@@ -215,8 +215,6 @@ export default function ScheduleMeetingScreen() {
           onChange={handleTimeChange}
         />
       )}
-
-      <Toast />
     </SafeAreaView>
   )
 }

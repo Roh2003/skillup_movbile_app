@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import * as SecureStore from "expo-secure-store"
 import { loginApi, registerApi } from "../lib/userauth.api"
 import authService from "../src/services/auth.service"
-import Toast from "react-native-toast-message";
+import { CustomToast } from "@/components/CustomToast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type UserRole = "learner" | "counsellor"
@@ -99,14 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { user } = res.data.data
       setUser(user)
-        Toast.show({
+        CustomToast.show({
           type: "success",
           text1: "Registration Successful",
           text2: "You have successfully registered."
         });
     } catch (error: any) {
       console.error("Registration failed:", error.response?.data || error.message)
-        Toast.show({
+        CustomToast.show({
           type: "error",
           text1: "Registration Failed",
           text2: error.response?.data?.message || error.message || "Something went wrong"
@@ -122,6 +122,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       console.log("🚪 [AuthContext] Logging out...")
+      
+      // Sign out from Google if user was signed in with Google
+      try {
+        const { signOutFromGoogle } = await import("../src/services/googleAuth.service")
+        await signOutFromGoogle()
+        console.log("✅ [AuthContext] Signed out from Google")
+      } catch (googleError) {
+        console.log("ℹ️ [AuthContext] Google sign-out skipped (not signed in with Google)")
+      }
+      
       // Clear AsyncStorage
       await AsyncStorage.clear()
       // Clear SecureStore token
@@ -168,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      <Toast />
     </AuthContext.Provider>
   )
 }

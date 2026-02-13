@@ -5,8 +5,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { useState, useEffect } from "react"
 import resourceService from "@/services/resource.service"
-import Toast from "react-native-toast-message"
-
+import { CustomToast } from "@/components/CustomToast"
 export default function FreeResourcesScreen() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState("all")
@@ -51,7 +50,7 @@ export default function FreeResourcesScreen() {
       console.error('=== FETCH RESOURCES ERROR ===')
       console.error('Error:', error)
       console.error('Error response:', error.response)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch resources'
@@ -81,13 +80,13 @@ export default function FreeResourcesScreen() {
       const supported = await Linking.canOpenURL(resource.url)
       if (supported) {
         await Linking.openURL(resource.url)
-        Toast.show({
+        CustomToast.show({
           type: 'success',
           text1: 'Opening Resource',
           text2: `Opening ${resource.title}...`
         })
       } else {
-        Toast.show({
+        CustomToast.show({
           type: 'error',
           text1: 'Error',
           text2: 'Cannot open this resource'
@@ -95,7 +94,7 @@ export default function FreeResourcesScreen() {
       }
     } catch (error) {
       console.error('Open resource error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Failed to open resource'
@@ -240,7 +239,6 @@ export default function FreeResourcesScreen() {
           </View>
         }
       />
-      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -249,6 +247,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+    paddingTop:20
   },
   loadingContainer: {
     flex: 1,

@@ -14,8 +14,8 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors";
 import courseService from "@/services/course.service";
-import Toast from "react-native-toast-message";
 import { LinearGradient } from "expo-linear-gradient";
+import { CustomToast } from "@/components/CustomToast";
 
 const TAB_LABELS = ["Overview", "Lessons"] as const;
 const { width } = Dimensions.get("window");
@@ -66,7 +66,7 @@ export default function CourseDetailScreen() {
       setLessons(lessonsData);
     } catch (error: any) {
       console.error("Fetch course error:", error);
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Error",
         text2: error.response?.data?.message || "Failed to fetch course details",
@@ -89,14 +89,14 @@ export default function CourseDetailScreen() {
       await fetchCourseDetails();
       
       setSelectedTab("Lessons");
-      Toast.show({
+      CustomToast.show({
         type: "success",
         text1: "Success",
         text2: "Successfully enrolled in course!",
       });
     } catch (error: any) {
       console.error("Enroll error:", error);
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Error",
         text2: error.response?.data?.message || "Failed to enroll in course",
@@ -144,7 +144,7 @@ export default function CourseDetailScreen() {
     
     // First lesson is always free preview
     if (!course.isEnrolled && index > 0) {
-      Toast.show({
+      CustomToast.show({
         type: "info",
         text1: "Enrollment Required",
         text2: "Please enroll to access all lessons",
@@ -156,7 +156,7 @@ export default function CourseDetailScreen() {
     console.log("Video URL to pass:", videoUrl);
     
     if (!videoUrl) {
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Error",
         text2: "Video URL not available for this lesson",
@@ -364,7 +364,6 @@ export default function CourseDetailScreen() {
           </TouchableOpacity>
         </View>
       )}
-      <Toast />
     </SafeAreaView>
   );
 }

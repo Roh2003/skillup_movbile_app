@@ -2,7 +2,7 @@
   "expo": {
     "name": "SkillUp",
     "slug": "skillup",
-    "scheme": "skillup",
+    "scheme": ["skillup", "com.skillup.mobile.app"],
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./public/SkillUplogo_zoomedOut.png",

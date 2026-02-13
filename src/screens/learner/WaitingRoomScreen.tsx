@@ -5,7 +5,8 @@ import { Ionicons } from "@expo/vector-icons"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useState, useEffect, useRef } from "react"
 import counselorService from "@/services/counselor.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
+
 
 export default function WaitingRoomScreen() {
     const navigation = useNavigation<any>()
@@ -103,15 +104,15 @@ export default function WaitingRoomScreen() {
                 // Time validation error
                 const { waitTime, scheduledTime } = error.response.data.data
                 console.log("⏰ [WaitingRoom] Time validation error - too early");
-                Toast.show({
+                CustomToast.show({
                     type: 'info',
                     text1: 'Too Early',
                     text2: error.response.data.message || `Meeting starts in ${waitTime} minute(s)`
                 })
                 setTimeout(() => navigation.goBack(), 2000)
             } else {
-                console.log("🚨 [WaitingRoom] General error - showing error toast");
-                Toast.show({
+                console.log("🚨 [WaitingRoom] General error - showing error CustomToast");
+                CustomToast.show({
                     type: 'error',
                     text1: 'Error',
                     text2: error.response?.data?.message || error.message || 'Failed to join meeting'
@@ -205,7 +206,6 @@ export default function WaitingRoomScreen() {
                     <Text style={styles.cancelButtonText}>Leave Waiting Room</Text>
                 </TouchableOpacity>
             </View>
-            <Toast />
         </SafeAreaView>
     )
 }

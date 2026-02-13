@@ -7,8 +7,7 @@ import { useNavigation } from "@react-navigation/native"
 import { useState, useEffect } from "react"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import counselorService from "@/services/counselor.service"
-import Toast from "react-native-toast-message"
-
+import { CustomToast } from "@/components/CustomToast"
 export default function ConsultationScreen() {
   const navigation = useNavigation<any>()
   const [searchQuery, setSearchQuery] = useState("")
@@ -31,7 +30,7 @@ export default function ConsultationScreen() {
 
     } catch (error: any) {
       console.error('Fetch counselors error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch counselors'
@@ -56,7 +55,7 @@ export default function ConsultationScreen() {
 
   const handleVideoCall = (counselor: any) => {
     if (!counselor.isActive) {
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: 'Counselor Offline',
         text2: 'This counselor is currently not available'
@@ -196,7 +195,6 @@ export default function ConsultationScreen() {
           </View>
         }
       />
-      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -205,6 +203,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+    paddingTop: 20,
   },
   loadingContainer: {
     flex: 1,

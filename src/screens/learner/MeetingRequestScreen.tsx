@@ -14,7 +14,8 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors";
 import consultationService from "@/services/consultation.service";
-import Toast from "react-native-toast-message";
+import { CustomToast } from "@/components/CustomToast";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function MeetingRequestScreen() {
   const route = useRoute<any>();
@@ -31,7 +32,7 @@ export default function MeetingRequestScreen() {
 
   const handleSubmit = async () => {
     if (!message.trim()) {
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Message Required",
         text2: "Please enter a message for the counselor",
@@ -57,14 +58,14 @@ export default function MeetingRequestScreen() {
       }
 
       if (response.success) {
-        Toast.show({
+        CustomToast.show({
           type: "success",
           text1: "Request Sent!",
           text2: `Your ${isInstant ? "instant" : "scheduled"} meeting request has been sent`,
         });
         navigation.goBack();
       } else {
-        Toast.show({
+        CustomToast.show({
           type: "error",
           text1: "Error",
           text2: response.message || "Failed to send request",
@@ -72,7 +73,7 @@ export default function MeetingRequestScreen() {
       }
     } catch (error: any) {
       console.error("Submit request error:", error);
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Error",
         text2: error.response?.data?.message || "Failed to send request",
@@ -102,7 +103,7 @@ export default function MeetingRequestScreen() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setScheduledDate(tomorrow);
-    Toast.show({
+    CustomToast.show({
       type: 'info',
       text1: 'Date Selected',
       text2: 'Selected tomorrow at this time',
@@ -114,7 +115,7 @@ export default function MeetingRequestScreen() {
     const futureTime = new Date();
     futureTime.setHours(futureTime.getHours() + 2);
     setScheduledDate(futureTime);
-    Toast.show({
+    CustomToast.show({
       type: 'info',
       text1: 'Time Selected',
       text2: 'Selected 2 hours from now',
@@ -310,7 +311,6 @@ export default function MeetingRequestScreen() {
         />
       )}
 
-      <Toast />
     </SafeAreaView>
   );
 }

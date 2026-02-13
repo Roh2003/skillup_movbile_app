@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { useState, useEffect } from "react"
 import contestService from "@/services/contest.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 export default function ChallengesScreen() {
   const navigation = useNavigation<any>()
@@ -31,7 +31,7 @@ export default function ChallengesScreen() {
 
     } catch (error: any) {
       console.error('Fetch contests error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch contests'
@@ -189,7 +189,6 @@ export default function ChallengesScreen() {
           </View>
         )}
       </ScrollView>
-      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -198,6 +197,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+    paddingTop: 20
   },
   loadingContainer: {
     flex: 1,

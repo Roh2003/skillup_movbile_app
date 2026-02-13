@@ -6,7 +6,7 @@ import { useRoute, useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import contestService from "@/services/contest.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 export default function ChallengeDetailScreen() {
   const route = useRoute<any>()
@@ -65,7 +65,7 @@ export default function ChallengeDetailScreen() {
 
     } catch (error: any) {
       console.error('Fetch contest error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch contest'
@@ -96,14 +96,14 @@ export default function ChallengeDetailScreen() {
       // Response structure: {status: true, data: {score: number}, message: "..."}
       setScore(response.data?.score || 0)
       setIsFinished(true)
-      Toast.show({
+      CustomToast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Contest submitted successfully!'
       })
     } catch (error: any) {
       console.error('Submit contest error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to submit contest'
@@ -168,7 +168,6 @@ export default function ChallengeDetailScreen() {
             <Text style={styles.submitButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-        <Toast />
       </SafeAreaProvider>
     )
   }
@@ -202,7 +201,6 @@ export default function ChallengeDetailScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <Toast />
       </SafeAreaProvider>
     )
   }
@@ -327,7 +325,6 @@ export default function ChallengeDetailScreen() {
           )}
         </View>
       </View>
-      <Toast />
     </SafeAreaProvider>
   )
 }

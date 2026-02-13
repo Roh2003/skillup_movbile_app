@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -16,9 +16,10 @@ import { Ionicons } from "@expo/vector-icons"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 import authService from "@/services/auth.service"
 import { useAuth } from "../../../context/AuthContext"
+import { signInWithGoogle, configureGoogleSignIn } from '@/services/googleAuth.service'
 
 export default function LearnerLoginScreen() {
   const navigation = useNavigation<any>()
@@ -28,6 +29,12 @@ export default function LearnerLoginScreen() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  // Configure Google Sign-In on mount
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, [])
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -40,7 +47,7 @@ export default function LearnerLoginScreen() {
       const response = await authService.learnerLogin({ email, password })
       navigation.navigate("LearnerMain")
 
-        Toast.show({
+        CustomToast.show({
           type: "success",
           text1: "Login successful 🎉",
           text2: "Welcome back to SkillUp",
@@ -52,13 +59,61 @@ export default function LearnerLoginScreen() {
         }
     } catch (error: any) {
       console.error("Login error:", error)
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Login failed",
         text2: error.response?.data?.message || "Invalid email or password",
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      
+      const result = await signInWithGoogle();
+      
+      console.log("🔐 Google sign-in result:", result);
+      
+      if (result.success && result.user) {
+        console.log("✅ Google Sign-In successful, authenticating with backend...");
+        
+        // Call backend API to login with Google
+        const response = await authService.googleLogin({
+          idToken: result.idToken || '',
+          email: result.user.email,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          googleId: result.user.id,
+          profileImage: result.user.profileImage,
+        });
+        
+        CustomToast.show({
+          type: "success",
+          text1: "Google Sign-In successful 🎉",
+          text2: "Welcome back to SkillUp!",
+        });
+        navigation.navigate("LearnerMain");
+      } else if (result.cancelled) {
+        console.log("🚫 User cancelled Google sign-in");
+      } else {
+        CustomToast.show({
+          type: "error",
+          text1: "Google Sign-In failed",
+          text2: result.error || "Could not authenticate with Google",
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Google sign-in error:", error);
+      CustomToast.show({
+        type: "error",
+        text1: "Google Sign-In failed",
+        text2: error.message || "Something went wrong",
+      });
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -162,9 +217,19 @@ export default function LearnerLoginScreen() {
                 <Text style={styles.socialButtonText}>Sign In with Facebook</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-google" size={20} color="#4285F4" />
-                <Text style={styles.socialButtonText}>Sign In with Google</Text>
+              <TouchableOpacity 
+                style={[styles.socialButton, googleLoading && { opacity: 0.7 }]}
+                onPress={handleGoogleSignIn}
+                disabled={googleLoading}
+              >
+                {googleLoading ? (
+                  <ActivityIndicator size="small" color="#4285F4" />
+                ) : (
+                  <Ionicons name="logo-google" size={20} color="#4285F4" />
+                )}
+                <Text style={styles.socialButtonText}>
+                  {googleLoading ? "Signing in..." : "Sign In with Google"}
+                </Text>
               </TouchableOpacity>
 
               {/* Footer */}
@@ -178,7 +243,6 @@ export default function LearnerLoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <Toast />
     </SafeAreaView>
     
   )

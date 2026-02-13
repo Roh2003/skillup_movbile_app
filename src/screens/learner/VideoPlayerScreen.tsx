@@ -6,7 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import YoutubePlayer from "react-native-youtube-iframe";
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { colors, spacing, borderRadius } from "@/theme/colors";
-import Toast from "react-native-toast-message";
+import { CustomToast } from "@/components/CustomToast"
+
 
 const { width, height } = Dimensions.get("window");
 
@@ -65,7 +66,7 @@ export default function VideoPlayerScreen() {
     if (state === "ended") {
       setCompleted(true);
       setPlaying(false);
-      Toast.show({
+      CustomToast.show({
         type: "success",
         text1: "Lesson Completed!",
         text2: "Great job! Moving to next lesson...",
@@ -74,7 +75,7 @@ export default function VideoPlayerScreen() {
   }, []);
 
   const handleNextLesson = () => {
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: "Next Lesson",
       text2: "Loading next lesson...",
@@ -83,7 +84,7 @@ export default function VideoPlayerScreen() {
   };
 
   const handlePreviousLesson = () => {
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: "Previous Lesson",
       text2: "Loading previous lesson...",
@@ -210,7 +211,6 @@ export default function VideoPlayerScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      <Toast />
     </SafeAreaView>
   );
 }

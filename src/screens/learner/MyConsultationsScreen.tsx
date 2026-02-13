@@ -6,8 +6,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import { useState, useEffect } from "react"
 import counselorService from "@/services/counselor.service"
-import Toast from "react-native-toast-message"
-
+import { CustomToast } from "@/components/CustomToast"
 type TabType = 'PENDING' | 'SCHEDULED' | 'COMPLETED'
 
 export default function MyConsultationsScreen() {
@@ -30,7 +29,7 @@ export default function MyConsultationsScreen() {
       console.log("meetings: ", meetings)
     } catch (error: any) {
       console.error('Fetch meetings error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch meetings'
@@ -53,7 +52,7 @@ export default function MyConsultationsScreen() {
     
     if (meeting.status === 'SCHEDULED' && now < meetingTime) {
       const waitMinutes = Math.ceil((meetingTime.getTime() - now.getTime()) / 60000)
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: 'Too Early',
         text2: `Meeting starts in ${waitMinutes} minute(s)`
@@ -278,7 +277,6 @@ export default function MyConsultationsScreen() {
           }
         />
       )}
-      <Toast />
     </SafeAreaView>
   )
 }

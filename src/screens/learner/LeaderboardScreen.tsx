@@ -6,7 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { useState, useEffect } from "react"
 import { useRoute } from "@react-navigation/native"
 import contestService from "@/services/contest.service"
-import Toast from "react-native-toast-message"
+import {CustomToast} from "@/components/CustomToast"
 import { LinearGradient } from "expo-linear-gradient"
 
 export default function LeaderboardScreen() {
@@ -28,7 +28,7 @@ export default function LeaderboardScreen() {
       setLeaderboard(response.data)
     } catch (error: any) {
       console.error('Fetch leaderboard error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch leaderboard'
@@ -220,7 +220,6 @@ export default function LeaderboardScreen() {
           </View>
         }
       />
-      <Toast />
     </SafeAreaProvider>
   )
 }

@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius } from "@/theme/colors";
-import Toast from "react-native-toast-message";
+import { CustomToast } from "@/components/CustomToast"
 import consultationService from "@/services/consultation.service";
 import { AGORA_APP_ID } from "../../../constants/config";
 
@@ -61,7 +61,7 @@ export default function MeetingRoomScreen() {
         setConnected(true);
         startDurationTimer();
         
-        Toast.show({
+        CustomToast.show({
           type: "success",
           text1: "Connected",
           text2: "Video call connected successfully",
@@ -71,7 +71,7 @@ export default function MeetingRoomScreen() {
       }
     } catch (error: any) {
       console.error("Initialize meeting error:", error);
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Connection Failed",
         text2: error.response?.data?.message || "Failed to connect to meeting",
@@ -97,7 +97,7 @@ export default function MeetingRoomScreen() {
   const handleToggleMute = () => {
     setMuted(!muted);
     // Agora: engine.muteLocalAudioStream(!muted);
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: muted ? "Microphone On" : "Microphone Off",
     });
@@ -106,7 +106,7 @@ export default function MeetingRoomScreen() {
   const handleToggleVideo = () => {
     setVideoEnabled(!videoEnabled);
     // Agora: engine.muteLocalVideoStream(!videoEnabled);
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: videoEnabled ? "Camera Off" : "Camera On",
     });
@@ -114,7 +114,7 @@ export default function MeetingRoomScreen() {
 
   const handleSwitchCamera = () => {
     // Agora: engine.switchCamera();
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: "Camera Switched",
     });
@@ -139,7 +139,7 @@ export default function MeetingRoomScreen() {
               
               await consultationService.endMeeting(meetingId);
               
-              Toast.show({
+              CustomToast.show({
                 type: "success",
                 text1: "Call Ended",
                 text2: `Duration: ${formatDuration(duration)}`,
@@ -252,7 +252,6 @@ export default function MeetingRoomScreen() {
         </TouchableOpacity>
       </View>
 
-      <Toast />
     </SafeAreaView>
   );
 }

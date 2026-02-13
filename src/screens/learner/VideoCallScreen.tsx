@@ -11,7 +11,8 @@ import {
   ClientRoleType,
 } from 'react-native-agora'
 import counselorService from "@/services/counselor.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
+
 
 const { width, height } = Dimensions.get('window')
 
@@ -85,7 +86,7 @@ export default function VideoCallScreen() {
       setEngine(agoraEngine)
     } catch (error) {
       console.error('Agora init error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Connection Error',
         text2: 'Failed to join video call'
@@ -134,7 +135,7 @@ export default function VideoCallScreen() {
               })
             } catch (error: any) {
               console.error('End call error:', error)
-              Toast.show({
+              CustomToast.show({
                 type: 'error',
                 text1: 'Error',
                 text2: 'Failed to end meeting'
@@ -225,7 +226,6 @@ export default function VideoCallScreen() {
           </Text>
         </View>
       </View>
-      <Toast />
     </SafeAreaView>
   )
 }

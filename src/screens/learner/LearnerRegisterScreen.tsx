@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -16,9 +16,9 @@ import { Ionicons } from "@expo/vector-icons"
 import { typography } from "@/theme/typography"
 import { colors } from "@/theme/colors"
 import { SafeAreaView } from "react-native-safe-area-context"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 import authService from "@/services/auth.service"
-import { useGoogleAuth } from '@/services/googleAuth.service';
+import { signInWithGoogle, configureGoogleSignIn } from '@/services/googleAuth.service';
 
 export default function LearnerRegisterScreen() {
   const navigation = useNavigation<any>()
@@ -61,14 +61,14 @@ export default function LearnerRegisterScreen() {
       const response = await authService.learnerRegister(registerData)
       
       if (response.success) {
-        Toast.show({
+        CustomToast.show({
           type: "success",
           text1: "Registration successful 🎉",
           text2: "You can now log in to your account",
         })
         navigation.navigate("LearnerLogin")
       } else {
-        Toast.show({
+        CustomToast.show({
           type: "error",
           text1: "Registration failed",
           text2: response.message || "Something went wrong",
@@ -76,7 +76,7 @@ export default function LearnerRegisterScreen() {
       }
     } catch (error: any) {
       console.error("Registration error:", error)
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Registration failed",
         text2: error.response?.data?.message || error.message || "Something went wrong",
@@ -86,64 +86,52 @@ export default function LearnerRegisterScreen() {
     }
   }
 
-  const { request, response, promptAsync } = useGoogleAuth();
+  // Configure Google Sign-In on mount
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleGoogleSignUp = async () => {
     try {
       setGoogleLoading(true);
-      const result = await promptAsync();
       
-      console.log("🔐 Google auth result:", result);
+      const result = await signInWithGoogle();
       
-      if (result?.type === 'success' && result.authentication?.accessToken) {
-        // Fetch user info from Google using the access token
-        const userInfoResponse = await fetch(
-          'https://www.googleapis.com/userinfo/v2/me',
-          {
-            headers: { Authorization: `Bearer ${result.authentication.accessToken}` },
-          }
-        );
-        
-        const googleUser = await userInfoResponse.json();
-        console.log("👤 Google user info:", googleUser);
+      console.log("🔐 Google sign-in result:", result);
+      
+      if (result.success && result.user) {
+        console.log("✅ Google Sign-In successful, registering with backend...");
         
         // Call backend API to register/login with Google
         const response = await authService.googleLogin({
-          idToken: result.authentication.idToken || '',
-          email: googleUser.email,
-          firstName: googleUser.given_name || googleUser.name?.split(' ')[0] || '',
-          lastName: googleUser.family_name || googleUser.name?.split(' ')[1] || '',
-          googleId: googleUser.id,
-          profileImage: googleUser.picture,
+          idToken: result.idToken || '',
+          email: result.user.email,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          googleId: result.user.id,
+          profileImage: result.user.profileImage,
         });
         
-        if (response.success) {
-          Toast.show({
-            type: "success",
-            text1: "Google Sign-Up successful 🎉",
-            text2: "Welcome to SkillUp!",
-          });
-          navigation.navigate("LearnerMain");
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "Sign-Up failed",
-            text2: response.message || "Something went wrong",
-          });
-        }
-      } else if (result?.type === 'cancel') {
+        CustomToast.show({
+          type: "success",
+          text1: "Google Sign-Up successful 🎉",
+          text2: "Welcome to SkillUp!",
+        });
+        navigation.navigate("LearnerMain");
+      } else if (result.cancelled) {
         console.log("🚫 User cancelled Google sign-in");
       } else {
-        Toast.show({
+        CustomToast.show({
           type: "error",
           text1: "Google Sign-Up failed",
-          text2: "Could not authenticate with Google",
+          text2: result.error || "Could not authenticate with Google",
         });
       }
     } catch (error: any) {
       console.error("❌ Google sign-up error:", error);
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Google Sign-Up failed",
         text2: error.message || "Something went wrong",
@@ -317,9 +305,9 @@ export default function LearnerRegisterScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity 
-                style={[styles.socialButton, (googleLoading || !request) && { opacity: 0.7 }]}
+                style={[styles.socialButton, googleLoading && { opacity: 0.7 }]}
                 onPress={handleGoogleSignUp}
-                disabled={!request || googleLoading}
+                disabled={googleLoading}
               >
                 {googleLoading ? (
                   <ActivityIndicator size="small" color="#4285F4" />
@@ -342,7 +330,6 @@ export default function LearnerRegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <Toast />
     </SafeAreaView>
   )
 }

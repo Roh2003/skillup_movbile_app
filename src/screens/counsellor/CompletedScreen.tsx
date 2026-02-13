@@ -5,7 +5,7 @@ import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { typography } from "@/theme/typography"
 import { Ionicons } from "@expo/vector-icons"
 import consultationService from "@/services/consultation.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 export default function CompletedScreen() {
   const [loading, setLoading] = useState(true)
@@ -20,19 +20,10 @@ export default function CompletedScreen() {
     try {
       setLoading(true)
       const response = await consultationService.getCompletedMeetings()
-
-      if (response.success) {
-        setMeetings(response.data)
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Failed to fetch completed meetings'
-        })
-      }
+      setMeetings(response.data)
     } catch (error: any) {
       console.error('Fetch completed meetings error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch meetings'
@@ -158,7 +149,7 @@ export default function CompletedScreen() {
           </View>
         }
       />
-      <Toast />
+      {/* <CustomToast /> */}
     </SafeAreaView>
   )
 }

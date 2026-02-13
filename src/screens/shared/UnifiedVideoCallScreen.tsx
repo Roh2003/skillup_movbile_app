@@ -14,7 +14,8 @@ import {
 } from 'react-native-agora'
 import counselorService from "@/services/counselor.service"
 import consultationService from "@/services/consultation.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
+
 
 interface RouteParams {
   meetingId: string
@@ -117,7 +118,7 @@ export default function UnifiedVideoCallScreen() {
           console.log('   Elapsed:', elapsed)
           setIsJoined(true)
           
-          Toast.show({
+          CustomToast.show({
             type: 'success',
             text1: 'Connected',
             text2: 'You are now in the meeting'
@@ -128,7 +129,7 @@ export default function UnifiedVideoCallScreen() {
           console.log('👤 [Agora] Remote user joined:', uid)
           setRemoteUid(uid)
           
-          Toast.show({
+          CustomToast.show({
             type: 'info',
             text1: 'Participant Joined',
             text2: `${participantName || 'Other participant'} joined the meeting`
@@ -139,7 +140,7 @@ export default function UnifiedVideoCallScreen() {
           console.log('👋 [Agora] Remote user left:', uid, 'Reason:', reason)
           setRemoteUid(null)
           
-          Toast.show({
+          CustomToast.show({
             type: 'info',
             text1: 'Participant Left',
             text2: `${participantName || 'Other participant'} left the meeting`
@@ -161,7 +162,7 @@ export default function UnifiedVideoCallScreen() {
 
     } catch (error) {
       console.error('❌ [UnifiedVideoCall] Agora initialization error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Connection Error',
         text2: 'Failed to initialize video call'
@@ -192,7 +193,7 @@ export default function UnifiedVideoCallScreen() {
       agoraEngineRef.current.muteLocalAudioStream(newMutedState)
       setMuted(newMutedState)
       
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: newMutedState ? 'Microphone Off' : 'Microphone On'
       })
@@ -205,7 +206,7 @@ export default function UnifiedVideoCallScreen() {
       agoraEngineRef.current.muteLocalVideoStream(!newVideoState)
       setVideoEnabled(newVideoState)
       
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: newVideoState ? 'Camera On' : 'Camera Off'
       })
@@ -215,7 +216,7 @@ export default function UnifiedVideoCallScreen() {
   const switchCamera = () => {
     if (agoraEngineRef.current) {
       agoraEngineRef.current.switchCamera()
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: 'Camera Switched'
       })
@@ -246,7 +247,7 @@ export default function UnifiedVideoCallScreen() {
               // Navigate back or to summary
               navigation.goBack()
               
-              Toast.show({
+              CustomToast.show({
                 type: 'success',
                 text1: 'Meeting Ended',
                 text2: `Duration: ${formatDuration(duration)}`
@@ -297,6 +298,7 @@ export default function UnifiedVideoCallScreen() {
               sourceType: VideoSourceType.VideoSourceCamera,
             }}
             style={styles.localVideo}
+            zOrderMediaOverlay={true}
           />
         ) : (
           <View style={[styles.localVideo, styles.videoOff]}>
@@ -354,8 +356,6 @@ export default function UnifiedVideoCallScreen() {
           <Ionicons name="camera-reverse" size={28} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-
-      <Toast />
     </SafeAreaView>
   )
 }

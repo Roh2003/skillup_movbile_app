@@ -1,8 +1,8 @@
 // export const API_BASE_URL = "http://10.183.177.116:3000/api";
-// export const API_BASE_URL = "http://10.237.207.116:3000/api";
+export const API_BASE_URL = "http://10.40.156.116:3000/api";
 
 // export const API_BASE_URL = "http://192.168.56.1/api";
-export const API_BASE_URL = "https://major-project-backend-wof8.onrender.com/api";
+// export const API_BASE_URL = "https://major-project-backend-wof8.onrender.com/api";
 
 // Agora configuration for video calling
 // Get your App ID from https://console.agora.io

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { View, Text, StyleSheet, Image, Animated } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import LottieView from "lottie-react-native"
@@ -7,6 +7,7 @@ import { typography } from "@/theme/typography"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { RootStackParamList } from "../../types/navigation"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export default function SplashScreen() {
   const navigation =
@@ -29,11 +30,33 @@ export default function SplashScreen() {
       }),
     ]).start()
 
-    const timer = setTimeout(() => {
-      navigation.replace("Onboarding")
-    }, 3000)
+    // Check if user is already logged in
+    const checkLoginStatus = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData')
+        const authToken = await AsyncStorage.getItem('authToken')
+        
+        console.log("🔐 [SplashScreen] Checking login status...")
+        console.log("📱 User data exists:", !!userData)
+        console.log("🔑 Auth token exists:", !!authToken)
+        
+        // Wait for animation to complete
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        
+        if (userData && authToken) {
+          console.log("✅ [SplashScreen] User is logged in, navigating to LearnerMain")
+          navigation.replace("LearnerMain")
+        } else {
+          console.log("ℹ️ [SplashScreen] User not logged in, navigating to Onboarding")
+          navigation.replace("Onboarding")
+        }
+      } catch (error) {
+        console.error("❌ [SplashScreen] Error checking login status:", error)
+        navigation.replace("Onboarding")
+      }
+    }
 
-    return () => clearTimeout(timer)
+    checkLoginStatus()
   }, [])
 
   return (

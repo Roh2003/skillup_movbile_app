@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useState } from "react"
 import counselorService from "@/services/counselor.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 export default function CounselorProfileScreen() {
     const navigation = useNavigation<any>()
@@ -17,7 +17,7 @@ export default function CounselorProfileScreen() {
 
     const handleInstantConsultation = async () => {
         if (!counselor.isActive) {
-            Toast.show({
+            CustomToast.show({
                 type: 'info',
                 text1: 'Counselor Offline',
                 text2: 'This counselor is currently not available for instant consultation'
@@ -33,7 +33,7 @@ export default function CounselorProfileScreen() {
                 message: 'Request for instant consultation'
             })
 
-            Toast.show({
+            CustomToast.show({
                 type: 'success',
                 text1: 'Request Sent',
                 text2: 'Your consultation request has been sent'
@@ -43,7 +43,7 @@ export default function CounselorProfileScreen() {
             navigation.navigate('MyConsultations')
         } catch (error: any) {
             console.error('Request error:', error)
-            Toast.show({
+            CustomToast.show({
                 type: 'error',
                 text1: 'Error',
                 text2: error.response?.data?.message || 'Failed to send request'
@@ -182,7 +182,6 @@ export default function CounselorProfileScreen() {
                     </Text>
                 </TouchableOpacity>
             </View>
-            <Toast />
         </SafeAreaView>
     )
 }

@@ -11,8 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing } from "@/theme/colors";
-import Toast from "react-native-toast-message";
 import consultationService from "@/services/consultation.service";
+import { CustomToast } from "@/components/CustomToast";
 
 // Same structure as MeetingRoomScreen but for counselors
 
@@ -88,13 +88,13 @@ export default function CounsellorMeetingRoomScreen() {
       
       setConnectionFailed(true);
       
-      Toast.show({
+      CustomToast.show({
         type: "error",
         text1: "Connection Failed",
         text2: error.response?.data?.message || error.message || "Failed to connect to meeting",
       });
       
-      // Wait a bit before navigating back to show the error toast
+      // Wait a bit before navigating back to show the error CustomToast
       setTimeout(() => {
         navigation.goBack();
       }, 2000);
@@ -117,7 +117,7 @@ export default function CounsellorMeetingRoomScreen() {
 
   const handleToggleMute = () => {
     setMuted(!muted);
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: muted ? "Microphone On" : "Microphone Off",
     });
@@ -125,14 +125,14 @@ export default function CounsellorMeetingRoomScreen() {
 
   const handleToggleVideo = () => {
     setVideoEnabled(!videoEnabled);
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: videoEnabled ? "Camera Off" : "Camera On",
     });
   };
 
   const handleSwitchCamera = () => {
-    Toast.show({
+    CustomToast.show({
       type: "info",
       text1: "Camera Switched",
     });
@@ -160,7 +160,7 @@ export default function CounsellorMeetingRoomScreen() {
 
               await consultationService.endMeeting(meetingId);
               
-              Toast.show({
+              CustomToast.show({
                 type: "success",
                 text1: "Call Ended",
                 text2: `Duration: ${formatDuration(duration)}`,
@@ -270,8 +270,8 @@ export default function CounsellorMeetingRoomScreen() {
           <Ionicons name="call" size={28} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-
-      <Toast />
+{/* 
+      <CustomToast /> */}
     </SafeAreaView>
   );
 }

@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { Ionicons } from "@expo/vector-icons"
 import consultationService from "@/services/consultation.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 import { useNavigation } from "@react-navigation/native"
 
 export default function ScheduleScreen() {
@@ -30,18 +30,10 @@ export default function ScheduleScreen() {
       setLoading(true)
       const response = await consultationService.getScheduledMeetings()
 
-      if (response.success) {
-        setMeetings(response.data)
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'Failed to fetch scheduled meetings'
-        })
-      }
+      setMeetings(response.data)
     } catch (error: any) {
       console.error('Fetch scheduled meetings error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch meetings'
@@ -83,7 +75,7 @@ export default function ScheduleScreen() {
     // Allow joining 5 minutes before scheduled time
     if (timeDiff > 5 * 60 * 1000) {
       const minutesUntil = Math.ceil(timeDiff / (1000 * 60))
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: 'Too Early',
         text2: `Meeting can be joined ${minutesUntil - 5} minute(s) before start time`
@@ -212,7 +204,7 @@ export default function ScheduleScreen() {
           </View>
         }
       />
-      <Toast />
+      {/* <CustomToast /> */}
     </SafeAreaView>
   )
 }

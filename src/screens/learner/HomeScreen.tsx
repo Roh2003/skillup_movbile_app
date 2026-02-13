@@ -6,11 +6,11 @@ import { useNavigation } from "@react-navigation/native"
 import { useAuth } from "../../../context/AuthContext"
 import { colors } from "@/theme/colors"
 import { typography } from "@/theme/typography"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import courseService from "@/services/course.service"
 import counselorService from "@/services/counselor.service"
 import contestService from "@/services/contest.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 
 export default function HomeScreen() {
@@ -24,8 +24,40 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
+  const welcomeShown = useRef(false)
+
   useEffect(() => {
     fetchHomeData()
+  }, [])
+
+  // Show welcome toast when user data is available (only once)
+  useEffect(() => {
+    if (user && !welcomeShown.current) {
+      welcomeShown.current = true
+      const userName = user.firstName || user.username || "Learner"
+      console.log("Showing welcome toast for:", userName)
+      
+      // Small delay to ensure Toast component is mounted
+      setTimeout(() => {
+        CustomToast.success(
+          `Welcome back, ${userName}! 👋`,
+          "Ready to continue learning?"
+        )
+      }, 500)
+    }
+  }, [user])
+
+  // TEST TOAST - Remove after testing!
+  useEffect(() => {
+    const testTimer = setTimeout(() => {
+      CustomToast.show({
+        type: "success",
+        text1: "🎉 Test Toast - Check Size!",
+        text2: "This is a sample toast to test the custom styling",
+        visibilityTime: 5000,
+      })
+    }, 5000)
+    return () => clearTimeout(testTimer)
   }, [])
 
   const fetchHomeData = async () => {
@@ -271,7 +303,6 @@ export default function HomeScreen() {
           }
         />
       </ScrollView>
-      <Toast />
     </View>
   )
 }

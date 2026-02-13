@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import courseService from "@/services/course.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 export default function CoursesScreen() {
   const navigation = useNavigation<any>()
@@ -32,7 +32,7 @@ export default function CoursesScreen() {
 
     } catch (error: any) {
       console.error('Fetch courses error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch courses'
@@ -160,7 +160,6 @@ export default function CoursesScreen() {
           </View>
         }
       />
-      <Toast />
     </SafeAreaProvider>
   )
 }
@@ -169,6 +168,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+    paddingTop: 20
   },
   loadingContainer: {
     flex: 1,

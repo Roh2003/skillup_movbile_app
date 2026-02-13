@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { colors, spacing, borderRadius, shadows } from "@/theme/colors"
 import { Ionicons } from "@expo/vector-icons"
 import consultationService from "@/services/consultation.service"
-import Toast from "react-native-toast-message"
+import { CustomToast } from "@/components/CustomToast"
 
 const { width } = Dimensions.get("window")
 
@@ -26,7 +26,7 @@ export default function EarningsScreen() {
       if (response.success) {
         setRevenueData(response.data)
       } else {
-        Toast.show({
+        CustomToast.show({
           type: 'error',
           text1: 'Error',
           text2: 'Failed to fetch revenue data'
@@ -34,7 +34,7 @@ export default function EarningsScreen() {
       }
     } catch (error: any) {
       console.error('Fetch revenue error:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Error',
         text2: error.response?.data?.message || 'Failed to fetch revenue'
@@ -169,7 +169,7 @@ export default function EarningsScreen() {
           )}
         </View>
       </ScrollView>
-      <Toast />
+      {/* <CustomToast /> */}
     </SafeAreaView>
   )
 }

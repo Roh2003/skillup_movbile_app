@@ -10,8 +10,7 @@ import { useState, useEffect } from "react"
 import * as ImagePicker from 'expo-image-picker'
 import authService from "@/services/auth.service"
 import { uploadToCloudinary } from "@/utils/cloudinary"
-import Toast from "react-native-toast-message"
-
+import { CustomToast } from "@/components/CustomToast"
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth()
   const navigation = useNavigation<any>()
@@ -60,7 +59,7 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Failed to load profile',
         text2: 'Please try again later'
@@ -94,7 +93,7 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Failed to pick image',
         text2: 'Please try again'
@@ -105,7 +104,7 @@ export default function ProfileScreen() {
   const uploadProfileImage = async (uri: string, fileName: string, mimeType: string) => {
     try {
       setUploading(true)
-      Toast.show({
+      CustomToast.show({
         type: 'info',
         text1: 'Uploading image...',
         text2: 'Please wait'
@@ -121,7 +120,7 @@ export default function ProfileScreen() {
 
       if (response) {
         setProfileData(prev => ({ ...prev, profileImage: cloudinaryResult.url }))
-        Toast.show({
+        CustomToast.show({
           type: 'success',
           text1: 'Profile picture updated!',
           text2: 'Your new photo looks great'
@@ -133,7 +132,7 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error uploading profile image:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Upload failed',
         text2: 'Please try again later'
@@ -150,7 +149,7 @@ export default function ProfileScreen() {
       const response = await authService.updateProfile(profileData)
       
       if (response) {
-        Toast.show({
+        CustomToast.show({
           type: 'success',
           text1: 'Profile updated!',
           text2: 'Your changes have been saved'
@@ -161,7 +160,7 @@ export default function ProfileScreen() {
           await refreshUser()
         }
       } else {
-        Toast.show({
+        CustomToast.show({
           type: 'error',
           text1: 'Update failed',
           text2: response.message || 'Please try again'
@@ -169,7 +168,7 @@ export default function ProfileScreen() {
       }
     } catch (error: any) {
       console.error('Error updating profile:', error)
-      Toast.show({
+      CustomToast.show({
         type: 'error',
         text1: 'Update failed',
         text2: error.response?.data?.message || 'Please try again later'
@@ -185,7 +184,18 @@ export default function ProfileScreen() {
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: logout }
+        { 
+          text: 'Sign Out', 
+          style: 'destructive', 
+          onPress: async () => {
+            await logout()
+            // Reset navigation stack and go to RoleSelection
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'RoleSelection' }],
+            })
+          }
+        }
       ]
     )
   }
@@ -484,7 +494,6 @@ export default function ProfileScreen() {
           )}
         </View>
       </ScrollView>
-      <Toast />
     </SafeAreaView>
   )
 }
