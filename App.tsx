@@ -10,7 +10,11 @@ import { ToastProvider } from '@/components/CustomToast';
 export default function App() {
   // Configure Google Sign-In when app starts
   useEffect(() => {
-    configureGoogleSignIn();
+    try {
+      configureGoogleSignIn();
+    } catch (error) {
+      console.warn('Google Sign-In configuration failed:', error);
+    }
   }, []);
 
   return (

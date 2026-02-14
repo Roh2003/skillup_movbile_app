@@ -59,21 +59,14 @@ export default function LearnerRegisterScreen() {
       const { confirmPassword, ...registerData } = formData
       console.log("🔐 Starting registration process...")
       const response = await authService.learnerRegister(registerData)
-      
-      if (response.success) {
-        CustomToast.show({
-          type: "success",
-          text1: "Registration successful 🎉",
-          text2: "You can now log in to your account",
-        })
-        navigation.navigate("LearnerLogin")
-      } else {
-        CustomToast.show({
-          type: "error",
-          text1: "Registration failed",
-          text2: response.message || "Something went wrong",
-        })
-      }
+
+      CustomToast.show({
+        type: "success",
+        text1: "Registration successful 🎉",
+        text2: "You can now log in to your account",
+      })
+      navigation.navigate("LearnerLogin")
+
     } catch (error: any) {
       console.error("Registration error:", error)
       CustomToast.show({
@@ -88,7 +81,11 @@ export default function LearnerRegisterScreen() {
 
   // Configure Google Sign-In on mount
   useEffect(() => {
-    configureGoogleSignIn();
+    try {
+      configureGoogleSignIn();
+    } catch (error) {
+      console.warn('Google Sign-In configuration failed:', error);
+    }
   }, []);
 
   const [googleLoading, setGoogleLoading] = useState(false);

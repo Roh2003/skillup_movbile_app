@@ -33,7 +33,11 @@ export default function LearnerLoginScreen() {
 
   // Configure Google Sign-In on mount
   useEffect(() => {
-    configureGoogleSignIn();
+    try {
+      configureGoogleSignIn();
+    } catch (error) {
+      console.warn('Google Sign-In configuration failed:', error);
+    }
   }, [])
 
   const handleLogin = async () => {

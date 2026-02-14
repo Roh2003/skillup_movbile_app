@@ -47,18 +47,6 @@ export default function HomeScreen() {
     }
   }, [user])
 
-  // TEST TOAST - Remove after testing!
-  useEffect(() => {
-    const testTimer = setTimeout(() => {
-      CustomToast.show({
-        type: "success",
-        text1: "🎉 Test Toast - Check Size!",
-        text2: "This is a sample toast to test the custom styling",
-        visibilityTime: 5000,
-      })
-    }, 5000)
-    return () => clearTimeout(testTimer)
-  }, [])
 
   const fetchHomeData = async () => {
     try {

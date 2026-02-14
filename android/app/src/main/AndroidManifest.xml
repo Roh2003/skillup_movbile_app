@@ -28,8 +28,8 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="skillup"/>
-        <data android:scheme="exp+skillup"/>
         <data android:scheme="com.skillup.mobile.app"/>
+        <data android:scheme="exp+skillup"/>
       </intent-filter>
     </activity>
   </application>
